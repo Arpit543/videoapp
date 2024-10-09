@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:videoapp/ui/widget/common_bottom_bar.dart';
+import 'package:videoapp/ui/view/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -53,7 +53,7 @@ class _SplashScreenState extends State<SplashScreen> {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (context) => const CommonBottomBar(),
+              builder: (context) => const HomeScreen(),
             ),
             (route) => false,
           );

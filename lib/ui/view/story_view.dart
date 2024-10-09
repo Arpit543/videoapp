@@ -12,11 +12,11 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
   final StoryController storyController = StoryController();
 
   final List<String> storyImages = [
-    "https://picsum.photos/250?image=10",
-    "https://picsum.photos/250?image=20",
-    "https://picsum.photos/250?image=30",
-    "https://picsum.photos/250?image=40",
-    "https://picsum.photos/250?image=50",
+    "https://picsum.photos/250",
+    "https://picsum.photos/250",
+    "https://picsum.photos/250",
+    "https://picsum.photos/250",
+    "https://picsum.photos/250",
   ];
 
   @override

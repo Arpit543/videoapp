@@ -7,7 +7,7 @@ import 'package:videoapp/ui/view/preview.dart';
 class TrimmerView extends StatefulWidget {
   final File file;
 
-  const TrimmerView(this.file, {Key? key}) : super(key: key);
+  const TrimmerView(this.file, {super.key});
 
   @override
   State<TrimmerView> createState() => _TrimmerViewState();
@@ -17,7 +17,7 @@ class _TrimmerViewState extends State<TrimmerView> {
   final Trimmer _trimmer = Trimmer();
 
   double _startValue = 0.0;
-  double _endValue = 30;
+  double _endValue = 0.0;
 
   bool _isPlaying = false;
   bool _progressVisibility = false;
@@ -25,7 +25,6 @@ class _TrimmerViewState extends State<TrimmerView> {
   @override
   void initState() {
     super.initState();
-
     _loadVideo();
   }
 
@@ -33,24 +32,26 @@ class _TrimmerViewState extends State<TrimmerView> {
     _trimmer.loadVideo(videoFile: widget.file);
   }
 
-  _saveVideo() {
+  Future<void> _saveVideo() async {
     setState(() {
       _progressVisibility = true;
     });
 
-    _trimmer.saveTrimmedVideo(
+    await _trimmer.saveTrimmedVideo(
       startValue: _startValue,
       endValue: _endValue,
       onSave: (outputPath) {
         setState(() {
           _progressVisibility = false;
         });
-        debugPrint('OUTPUT PATH: $outputPath');
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => Preview(outputPath),
-          ),
-        );
+        if (outputPath != null) {
+          debugPrint('OUTPUT PATH: $outputPath');
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => Preview(outputPath),
+            ),
+          );
+        }
       },
     );
   }
@@ -68,79 +69,93 @@ class _TrimmerViewState extends State<TrimmerView> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: const Text("Video Trimmer"),
+          backgroundColor: const Color(0xff6EA9FF),
+          iconTheme: const IconThemeData(color: Colors.white),
+          title: const Text(
+            "Trim Video",
+            style: TextStyle(color: Colors.white),
+          ),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.save),
+              onPressed: _progressVisibility ? null : () => _saveVideo(),
+              tooltip: 'Save Video',
+            ),
+          ],
         ),
-        body: Center(
-          child: Container(
-            padding: const EdgeInsets.only(bottom: 30.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.max,
-              children: <Widget>[
-                Visibility(
-                  visible: _progressVisibility,
-                  child: const LinearProgressIndicator(
-                    backgroundColor: Colors.red,
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            if (_progressVisibility)
+              const LinearProgressIndicator(
+                backgroundColor: Colors.red,
+                minHeight: 5,
+              ),
+            Expanded(
+              child: Column(
+                children: <Widget>[
+                  Expanded(
+                    flex: 4,
+                    child: VideoViewer(trimmer: _trimmer),
                   ),
-                ),
-                ElevatedButton(
-                  onPressed: _progressVisibility ? null : () => _saveVideo(),
-                  child: const Text("SAVE"),
-                ),
-                Expanded(
-                  child: VideoViewer(trimmer: _trimmer),
-                ),
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
+                  const SizedBox(height: 20.0),
+                  Expanded(
+                    flex: 2,
                     child: TrimViewer(
                       trimmer: _trimmer,
                       viewerHeight: 50.0,
                       viewerWidth: MediaQuery.of(context).size.width,
                       durationStyle: DurationStyle.FORMAT_MM_SS,
-                      maxVideoLength: const Duration(seconds: 60),
+                      maxVideoLength: const Duration(seconds: 30),
                       editorProperties: TrimEditorProperties(
-                        borderPaintColor: Colors.yellow,
-                        borderWidth: 4,
-                        borderRadius: 5,
-                        circlePaintColor: Colors.yellow.shade800,
+                        borderPaintColor: Colors.teal,
+                        borderWidth: 3,
+                        borderRadius: 8,
+                        circlePaintColor: Colors.teal.shade700,
                       ),
+                      durationTextStyle: const TextStyle(color: Colors.black),
                       areaProperties: TrimAreaProperties.edgeBlur(
                         thumbnailQuality: 10,
                       ),
-                      onChangeStart: (value) => _startValue = value,
-                      durationTextStyle: const TextStyle(
-                        color: Colors.black,
-                      ),
-                      onChangeEnd: (value) => _endValue = value,
-                      onChangePlaybackState: (value) =>
-                          setState(() => _isPlaying = value),
+                      onChangeStart: (value) => setState(() {
+                        _startValue = value;
+                      }),
+                      onChangeEnd: (value) => setState(() {
+                        _endValue = value;
+                      }),
+                      onChangePlaybackState: (isPlaying) {
+                        setState(() {
+                          _isPlaying = isPlaying;
+                        });
+                      },
+                      showDuration: true,
+                      type: ViewerType.auto,
+                      paddingFraction: 2.0,
                     ),
                   ),
-                ),
-                TextButton(
-                  child: _isPlaying
-                      ? const Icon(
-                          Icons.pause,
-                          size: 80.0,
-                          color: Colors.black,
-                        )
-                      : const Icon(
-                          Icons.play_arrow,
-                          size: 80.0,
-                          color: Colors.black,
-                        ),
-                  onPressed: () async {
-                    bool playbackState = await _trimmer.videoPlaybackControl(
-                      startValue: _startValue,
-                      endValue: _endValue,
-                    );
-                    setState(() => _isPlaying = playbackState);
-                  },
-                )
-              ],
+                  const SizedBox(height: 20.0),
+                  Center(
+                    child: IconButton(
+                      iconSize: 50.0,
+                      color: Colors.black,
+                      icon: _isPlaying ? const Icon(Icons.pause_circle_filled) : const Icon(Icons.play_circle_filled),
+                      onPressed: () async {
+                        bool playbackState = await _trimmer.videoPlaybackControl(
+                          startValue: _startValue,
+                          endValue: _endValue,
+                        );
+                        setState(() {
+                          _isPlaying = playbackState;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

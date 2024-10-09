@@ -34,6 +34,21 @@ class _VideoEditorState extends State<VideoEditor> {
     }
   }
 
+  Future<void> _pickVideos() async {
+    final pickedFile = await _picker.pickVideo(source: ImageSource.camera);
+    if (pickedFile != null) {
+      setState(() {
+        galleryFile = File(pickedFile.path);
+      });
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TrimmerView(galleryFile!),
+          ));
+      await _trimmer.loadVideo(videoFile: File(pickedFile.path));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,6 +80,29 @@ class _VideoEditorState extends State<VideoEditor> {
                   },
                   child: const Text(
                     "Choose from gallery",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Center(
+            child: Container(
+              height: 50,
+              margin: const EdgeInsets.all(10),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xff4A90E2), Color(0xff6EA9FF)],
+                ),
+                borderRadius: BorderRadius.all(Radius.circular(20)),
+              ),
+              child: Center(
+                child: InkWell(
+                  onTap: () {
+                    _pickVideos();
+                  },
+                  child: const Text(
+                    "Choose from camera",
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
