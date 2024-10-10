@@ -1,10 +1,8 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lottie/lottie.dart';
-import 'package:video_trimmer/video_trimmer.dart';
-import 'package:videoapp/ui/view/trimmer_view.dart';
+import 'package:videoapp/ui/view/image_editor/image_editor.dart';
+import 'package:videoapp/ui/view/video_edit/video_editor.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,38 +12,47 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final Trimmer _trimmer = Trimmer();
   final ImagePicker _picker = ImagePicker();
 
   File? galleryFile;
+  File? cameraFile;
 
-  Future<void> _pickVideo() async {
-    final pickedFile = await _picker.pickVideo(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        galleryFile = File(pickedFile.path);
-      });
-      Navigator.push(
+  Future<void> _pickVideo(int val) async {
+    try {
+      final pickedFile = await _picker.pickVideo(
+        source: val == 0 ? ImageSource.gallery : ImageSource.camera,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          galleryFile = File(pickedFile.path);
+        });
+        Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => TrimmerView(galleryFile!),
-          ));
-      await _trimmer.loadVideo(videoFile: File(pickedFile.path));
+            builder: (context) => VideoEditor(file: galleryFile!),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error picking video: $e')),
+      );
     }
   }
 
-  Future<void> _pickVideos() async {
-    final pickedFile = await _picker.pickVideo(source: ImageSource.camera);
+  Future<void> _pickImages(int val) async {
+    final pickedFile = await _picker.pickImage(
+        source: val == 0 ? ImageSource.gallery : ImageSource.camera);
     if (pickedFile != null) {
       setState(() {
-        galleryFile = File(pickedFile.path);
+        cameraFile = File(pickedFile.path);
       });
       Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => TrimmerView(galleryFile!),
+            builder: (context) => ImageEditor(file: cameraFile!),
           ));
-      await _trimmer.loadVideo(videoFile: File(pickedFile.path));
     }
   }
 
@@ -55,63 +62,80 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: const Color(0xff6EA9FF),
+        elevation: 0,
         centerTitle: true,
         title: const Text(
           "Video App",
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Lottie.asset("assets/anim/anim_1.json"),
-            Center(
-              child: InkWell(
-                onTap: () {
-                  _pickVideo();
-                },
-                child: Container(
-                  height: 50,
-                  margin: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xff4A90E2), Color(0xff6EA9FF)],
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Column(
+            children: [
+              Expanded(
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  padding: const EdgeInsets.all(8),
+                  children: [
+                    _gridItem(
+                      label: "Gallery Video",
+                      onTap: () => _pickVideo(0),
                     ),
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      "Choose from gallery",
-                      style: TextStyle(color: Colors.white),
+                    _gridItem(
+                      label: "Camera Video",
+                      onTap: () => _pickVideo(1),
                     ),
-                  ),
+                    _gridItem(
+                      label: "Gallery Image",
+                      onTap: () => _pickImages(0),
+                    ),
+                    _gridItem(
+                      label: "Camera Image",
+                      onTap: () => _pickImages(1),
+                    ),
+                    _gridItem(
+                      label: "My Work",
+                      onTap: () {}
+                    ),
+                  ],
                 ),
               ),
-            ),
-            Center(
-              child: InkWell(
-                onTap: () {
-                  _pickVideo();
-                },
-                child: Container(
-                  height: 50,
-                  margin: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xff4A90E2), Color(0xff6EA9FF)],
-                    ),
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      "Choose from camera",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _gridItem({required String label, required Function onTap}) {
+    return InkWell(
+      onTap: () => onTap(),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(2, 2),
             ),
           ],
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ),
       ),
     );

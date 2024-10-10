@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
 
@@ -69,8 +70,8 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Padding(
           padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.2),
           child: ClipOval(
-            child: Image.network(
-              "https://picsum.photos/250",
+            child: Lottie.asset(
+              "assets/anim/anim_1.json",
               width: 100,
               height: 100,
             ),

@@ -31,31 +31,22 @@ dependencies:
   flutter:
     sdk: flutter
 
-
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   get: ^4.6.6
   image_picker: ^1.1.2
-  image_cropper: ^8.0.2
   story_view: ^0.16.5
-  #flutter_ffmpeg: ^0.4.0  # Check for the latest version
-  video_trimmer: any # Check for the latest version
-  video_thumbnail: ^0.5.3
   video_player: ^2.9.2
   permission_handler: ^11.3.1
   lottie:
+  video_editor: ^3.0.0
+  ffmpeg_kit_flutter_min: ^6.0.3
+  fraction: ^5.0.3
+  firebase_core: ^3.6.0
+  pro_image_editor: ^5.4.1
+  firebase_storage: ^12.3.3
 
-ffmpeg-kit-https:
-    dependency: ^6.0
-    # Exclude mobile-ffmpeg if you don't need it
-    mobile-ffmpeg:
-      dependency: ^4.4
-      # Exclude libavcodec.so
-      android:
-        jniLibs:
-          exclude:
-            - arm64-v8a/libavcodec.so
 dev_dependencies:
   flutter_test:
     sdk: flutter

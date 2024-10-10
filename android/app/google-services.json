@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "5652437717",
+    "project_id": "video-d4dfd",
+    "storage_bucket": "video-d4dfd.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:5652437717:android:352b0cabace6a88a8ce05c",
+        "android_client_info": {
+          "package_name": "com.example.videoapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNM7uPa8wFx3ooMb-hcXzGIDoIhxwXZAU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
