@@ -10,6 +10,7 @@ import 'package:videoapp/ui/view/home_screen.dart';
 import 'package:videoapp/ui/view/splash_screen.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
 
+import '../ui/view/auth_pages/login.dart';
 import 'constants.dart';
 
 class FirebaseUpload {
@@ -22,7 +23,7 @@ class FirebaseUpload {
   ///   Upload Image n Video to Firebase
   Future<void> uploadFileInStorage({required File file,required String type,required BuildContext context}) async {
     String fileName = file.path.split("/").last;
-    Reference storageRef = FirebaseStorage.instance.ref().child("$type/$fileName");
+    Reference storageRef = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/$type/$fileName");
 
     try {
       storageRef.putFile(file);
@@ -41,7 +42,7 @@ class FirebaseUpload {
   ///   Fetch Image from Firebase Storage using [fetchImagesList]
   Future<List<String>> fetchImagesList() async {
     try {
-      final storageRefImages = FirebaseStorage.instance.ref().child("Images");
+      final storageRefImages = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/Images");
       final listResultImages = await storageRefImages.listAll();
       final imageUrls = <String>[];
       for (final item in listResultImages.items) {
@@ -58,7 +59,7 @@ class FirebaseUpload {
   ///   Fetch Video from Firebase Storage using [fetchVideosList]
   Future<List<String>> fetchVideosList() async {
     try {
-      final storageRefVideos = FirebaseStorage.instance.ref().child("Videos");
+      final storageRefVideos = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/Videos");
       final listResultVideos = await storageRefVideos.listAll();
 
       final videoUrls = <String>[];
@@ -168,8 +169,7 @@ class FirebaseUpload {
         await databaseMethod.addUser(user.uid, userInfo);
 
         showSnackBar(message: 'You Have Been Registered Successfully!',context: context,isError: false,);
-
-       // Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const Login()),(Route<dynamic> route) => false,);
+        Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const Login()),(Route<dynamic> route) => false,);
 
         nameController.clear();
         emailController.clear();
@@ -185,74 +185,26 @@ class FirebaseUpload {
   }
 
   ///   Login with Email n Password
- /* Future<void> userLogin({required String email, required String password, required BuildContext context}) async {
+  Future<void> userLogin({required String email,required String password,required BuildContext context,}) async {
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
-
-      if (userCredential.user != null) {
-        DatabaseReference userRef = FirebaseDatabase.instance.ref('User/${userCredential.user!.uid}');
-        DataSnapshot userSnapshot = await userRef.get();
-
-        if (userSnapshot.exists) {
-          Map<String, dynamic> userData = userSnapshot.value as Map<String, dynamic>;
-
-          Constants.setBool(Constants.isLogin, true);
-          Constants.setString(Constants.email, userData['email']);
-          Constants.setString(Constants.name, userData['name']);
-          Constants.setString(Constants.userId, userCredential.user!.uid);
-
-          showSnackBar(message: 'You Have Been Logged In Successfully!', context: context, isError: false);
-          Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const HomeScreen()),(Route<dynamic> route) => false);
-        } else {
-          throw Exception("User data not found in Realtime Database");
-        }
-      }
-    } on FirebaseAuthException catch (e) {
-      String errorMessage;
-      if (e.code == 'user-not-found') {
-        errorMessage = "No User Found for that Email";
-      } else if (e.code == 'wrong-password') {
-        errorMessage = "Wrong Password Provided by You";
-      } else if (e.code == 'invalid-email') {
-        errorMessage = "Invalid Email Provided by You";
-      } else {
-        errorMessage = "An unknown error occurred";
-      }
-      showSnackBar(message: errorMessage, context: context ,isError: true);
-    } catch (e) {
-      showSnackBar(message: 'An error occurred while logging in. Please try again.', context: context, isError: true);
-    }
-  }*/
-
-  Future<void> userLogin({
-    required String email,
-    required String password,
-    required BuildContext context,
-  }) async {
-    try {
-      // Try signing in the user
       UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // Check if user is authenticated
       if (userCredential.user != null) {
 
-        // Try fetching user data from Realtime Database
         DatabaseReference userRef = FirebaseDatabase.instance.ref('User/${userCredential.user!.uid}');
         DataSnapshot userSnapshot = await userRef.get();
 
-        // Check if the user data exists in the database
         if (userSnapshot.exists) {
 
-          // Store data locally (using Constants or SharedPreferences)
           Constants.setBool(Constants.isLogin, true);
           Constants.setString(Constants.email, userCredential.user?.email ?? "");
           Constants.setString(Constants.name, userCredential.user?.displayName ?? "");
           Constants.setString(Constants.userId, userCredential.user!.uid);
+          print("${Constants.getString(Constants.name)}");
 
-          // Show success message and navigate to home screen
           showSnackBar(
             message: 'You Have Been Logged In Successfully!',
             context: context,

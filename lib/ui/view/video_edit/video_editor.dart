@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:video_editor/video_editor.dart';
-import '../../widget/export_result.dart';
+
 import 'crop_page.dart';
+import 'export_result.dart';
 import 'export_services.dart';
 
 class VideoEditor extends StatefulWidget {
@@ -20,7 +21,6 @@ class _VideoEditorState extends State<VideoEditor> {
   final _exportingProgress = ValueNotifier<double>(0.0);
   final _isExporting = ValueNotifier<bool>(false);
   final double height = 60;
-
 
   late final VideoEditorController _controller = VideoEditorController.file(
     widget.file,
@@ -55,7 +55,10 @@ class _VideoEditorState extends State<VideoEditor> {
 
     await ExportService.runFFmpegCommand(
       await config.getExecuteConfig(),
-      onProgress: (stats) { _exportingProgress.value = config.getFFmpegProgress(stats.getTime().round()); },
+      onProgress: (stats) {
+        _exportingProgress.value =
+            config.getFFmpegProgress(stats.getTime().round());
+      },
       onError: (e, s) => _showErrorSnackBar("Error on export video :("),
       onCompleted: (exportedFile) async {
         _isExporting.value = false;
@@ -185,17 +188,22 @@ class _VideoEditorState extends State<VideoEditor> {
                               ),
                               ValueListenableBuilder(
                                 valueListenable: _isExporting,
-                                builder: (_, bool export, Widget? child) =>
-                                    AnimatedSize(
-                                  duration: kThemeAnimationDuration,
-                                  child: export ? child : null,
-                                ),
+                                builder: (_, bool export, Widget? child) {
+                                  return AnimatedSize(
+                                    duration: kThemeAnimationDuration,
+                                    child: export ? child : null,
+                                  );
+                                },
                                 child: AlertDialog(
+                                  backgroundColor: const Color(0xff6EA9FF),
                                   title: ValueListenableBuilder(
                                     valueListenable: _exportingProgress,
-                                    builder: (_, double value, __) => Text(
-                                      "Exporting video ${(value * 100).ceil()}%",
-                                      style: const TextStyle(fontSize: 12),
+                                    builder: (_, double value, __) => Center(
+                                      child: Text(
+                                        "Exporting video ${(value * 100).ceil()}%",
+                                        style: const TextStyle(
+                                            color: Colors.black, fontSize: 16),
+                                      ),
                                     ),
                                   ),
                                 ),

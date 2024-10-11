@@ -15,13 +15,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
-    Future.delayed(const Duration(seconds: 5), () async {
-      if (Constants.getBool(Constants.isLogin) == true) {
-        Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const HomeScreen(),), (route) => false);
-      } else {
-        Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const Login(),), (route) => false);
-      }
-    });
+
     super.initState();
   }
 
@@ -39,16 +33,22 @@ class _SplashScreenState extends State<SplashScreen> {
         );
       }
 
-      /*if (storageStatus.isDenied) {
+      if (storageStatus.isDenied) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Storage permission is required for this app. Please enable it from app settings.'),
             action: SnackBarAction(label: 'Settings',onPressed: () => openAppSettings(),),
           ),
         );
-      }*/
-    } else if (cameraStatus.isGranted /*&& storageStatus.isGranted*/) {
-
+      }
+    } else if (cameraStatus.isGranted && storageStatus.isGranted) {
+      Future.delayed(const Duration(seconds: 5), () async {
+        if (Constants.getBool(Constants.isLogin) == true) {
+          Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const HomeScreen()), (route) => false);
+        } else {
+          Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const Login()), (route) => false);
+        }
+      });
     }
   }
 

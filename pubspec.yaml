@@ -51,6 +51,8 @@ dependencies:
   shared_preferences: ^2.3.2
   cloud_firestore: ^5.4.4
   firebase_database: ^11.1.4
+  video_thumbnail: ^0.5.3
+  photo_view: ^0.15.0
 
 dev_dependencies:
   flutter_test:

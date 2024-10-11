@@ -18,3 +18,19 @@ showSnackBar({required BuildContext context,bool isError = false,required String
     ),
   );
 }
+
+class ColoredTabBar extends Container implements PreferredSizeWidget {
+  ColoredTabBar({super.key, required this.colors, required this.tabBar});
+
+  final Color colors;
+  final TabBar tabBar;
+
+  @override
+  Size get preferredSize => tabBar.preferredSize;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    color: colors,
+    child: tabBar,
+  );
+}

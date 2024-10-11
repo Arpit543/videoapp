@@ -2,11 +2,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:video_editor/video_editor.dart';
 import 'package:videoapp/core/constants.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/image_editor/image_editor.dart';
-import 'package:videoapp/ui/view/my_work.dart';
+import 'package:videoapp/ui/view/my_work/my_images.dart';
+import 'package:videoapp/ui/view/splash_screen.dart';
 import 'package:videoapp/ui/view/video_edit/video_editor.dart';
+
+import 'my_work/tab_vew.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -67,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Hey ${Constants.getString(Constants.name) ?? ""}',
+          'Hey ${Constants.getString(Constants.name)}',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
@@ -102,13 +106,39 @@ class _HomeScreenState extends State<HomeScreen> {
                     _gridItem(
                       label: "My Work",
                       onTap: () {
-                        Future.delayed(const Duration(milliseconds: 200), () => Get.to(const MyWork()),);
+                        Future.delayed(const Duration(milliseconds: 200), () => Get.to(const MyWorkTab(index: 0)),);
                       },
                     ),
                   ],
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0xff6EA9FF),
+              blurRadius: 8,
+              offset: Offset(2, 2),
+            ),
+          ],
+        ),
+        height: 50,
+        child: IconButton(
+          onPressed: () {
+            Constants.clear();
+            Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const SplashScreen(),), (route) => false,);
+          },
+          icon: Center(
+            child: Text(
+              "Logout",
+              style: TextStyle(color: const CropGridStyle().background, fontWeight: FontWeight.bold,),
+            ),
           ),
         ),
       ),
