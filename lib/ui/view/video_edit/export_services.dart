@@ -14,35 +14,23 @@ class ExportService {
     if (executions.isNotEmpty) await FFmpegKit.cancel();
   }
 
-  static Future<FFmpegSession> runFFmpegCommand(
-      FFmpegVideoEditorExecute execute, {
-        required void Function(File file) onCompleted,
-        void Function(Object, StackTrace)? onError,
-        void Function(Statistics)? onProgress,
-      }) {
+  static Future<FFmpegSession> runFFmpegCommand(FFmpegVideoEditorExecute execute, {required void Function(File file) onCompleted,void Function(Object, StackTrace)? onError,void Function(Statistics)? onProgress,}) {
     log('FFmpeg start process with command = ${execute.command}');
     return FFmpegKit.executeAsync(
-      execute.command,
-          (session) async {
-        final state =
-        FFmpegKitConfig.sessionStateToString(await session.getState());
+      execute.command,(session) async {
+        final state = FFmpegKitConfig.sessionStateToString(await session.getState());
         final code = await session.getReturnCode();
 
         if (ReturnCode.isSuccess(code)) {
           onCompleted(File(execute.outputPath));
         } else {
           if (onError != null) {
-            onError(
-              Exception(
-                  'FFmpeg process exited with state $state and return code $code.\n${await session.getOutput()}'),
-              StackTrace.current,
-            );
+            onError(Exception('FFmpeg process exited with state $state and return code $code.\n${await session.getOutput()}'),StackTrace.current,);
           }
           return;
         }
       },
-      null,
-      onProgress,
+      null,onProgress,
     );
   }
 }
