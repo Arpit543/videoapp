@@ -17,9 +17,10 @@ Future<void> _getImageDimension(File file,{required Function(Size) onResult}) as
 String _fileMBSize(File file) => ' ${(file.lengthSync() / (1024 * 1024)).toStringAsFixed(1)} MB';
 
 class VideoResultPopup extends StatefulWidget {
-  const VideoResultPopup({super.key, required this.video});
-
   final File video;
+  final bool title;
+  const VideoResultPopup({super.key, required this.video, required this.title});
+
 
   @override
   State<VideoResultPopup> createState() => _VideoResultPopupState();
@@ -73,9 +74,9 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
-        title: const Text(
-          "Edited Video",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          widget.title ? "Edited Video" : "",
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
       body: Center(
@@ -87,7 +88,7 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
             ),
             Positioned(
               bottom: 0,
-              child: FileDescription(
+              child: widget.title ? FileDescription(
                 description: {
                   if (!_isGif)
                     'Video duration': '${((_controller?.value.duration.inMilliseconds ?? 0) / 1000).toStringAsFixed(2)}s',
@@ -95,12 +96,12 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                     'Video dimension': _fileDimension.toString(),
                     'Video size': _fileMbSize,
                 },
-              ),
+              ): const SizedBox.shrink(),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar:  widget.title ?  Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -143,7 +144,7 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
             ),
           ],
         ),
-      ),
+      ) : const SizedBox.shrink(),
     );
   }
 }

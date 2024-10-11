@@ -62,7 +62,7 @@ class _VideoEditorState extends State<VideoEditor> {
       onError: (e, s) => _showErrorSnackBar("Error on export video :("),
       onCompleted: (exportedFile) async {
         _isExporting.value = false;
-        Get.to(VideoResultPopup(video: exportedFile));
+        Get.to(VideoResultPopup(video: exportedFile,title: false,));
       },
     );
   }

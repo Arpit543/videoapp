@@ -71,7 +71,7 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                                 return InkWell(
                                   onTap: () async {
                                     File file = await CachedFileHelper.urlToFile(upload.videoURLs[index]);
-                                    Get.to(VideoResultPopup(video: file));
+                                    Get.to(VideoResultPopup(video: file, title: false));
                                   },
                                   child: Image.file(
                                     File(snapshot.data!),
