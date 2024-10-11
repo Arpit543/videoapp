@@ -57,12 +57,8 @@ class _MyWorkTabState extends State<MyWorkTab>
               controller: tabController,
               automaticIndicatorColorAdjustment: true,
               tabs: const [
-                Tab(
-                  child: Text("Images", style: TextStyle(color: Colors.black)),
-                ),
-                Tab(
-                  child: Text("Videos", style: TextStyle(color: Colors.black)),
-                )
+                Tab(child: Text("Images", style: TextStyle(color: Colors.black)),),
+                Tab(child: Text("Videos", style: TextStyle(color: Colors.black)),),
               ],
             ),
           ),

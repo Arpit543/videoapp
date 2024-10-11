@@ -89,7 +89,6 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
               bottom: 0,
               child: FileDescription(
                 description: {
-                  //'Video path': widget.video.path,
                   if (!_isGif)
                     'Video duration': '${((_controller?.value.duration.inMilliseconds ?? 0) / 1000).toStringAsFixed(2)}s',
                     'Video ratio': Fraction.fromDouble(_fileDimension.aspectRatio).reduce().toString(),
