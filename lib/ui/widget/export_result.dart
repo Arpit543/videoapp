@@ -4,16 +4,17 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:fraction/fraction.dart';
 import 'package:path/path.dart' as path;
+import 'package:video_editor/video_editor.dart';
 import 'package:video_player/video_player.dart';
+import 'package:videoapp/core/firebase_upload.dart';
+import 'package:videoapp/ui/view/home_screen.dart';
 
-Future<void> _getImageDimension(File file,
-    {required Function(Size) onResult}) async {
+Future<void> _getImageDimension(File file,{required Function(Size) onResult}) async {
   var decodedImage = await decodeImageFromList(file.readAsBytesSync());
   onResult(Size(decodedImage.width.toDouble(), decodedImage.height.toDouble()));
 }
 
-String _fileMBSize(File file) =>
-    ' ${(file.lengthSync() / (1024 * 1024)).toStringAsFixed(1)} MB';
+String _fileMBSize(File file) => ' ${(file.lengthSync() / (1024 * 1024)).toStringAsFixed(1)} MB';
 
 class VideoResultPopup extends StatefulWidget {
   const VideoResultPopup({super.key, required this.video});
@@ -28,9 +29,9 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
   VideoPlayerController? _controller;
   FileImage? _fileImage;
   Size _fileDimension = Size.zero;
-  late final bool _isGif =
-      path.extension(widget.video.path).toLowerCase() == ".gif";
+  late final bool _isGif = path.extension(widget.video.path).toLowerCase() == ".gif";
   late String _fileMbSize;
+  FirebaseUpload firebaseUpload = FirebaseUpload();
 
   @override
   void initState() {
@@ -65,33 +66,80 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(30),
-      child: Center(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: const Color(0xff6EA9FF),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
+        title: const Text(
+          "Edited Video",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: Center(
         child: Stack(
           alignment: Alignment.bottomLeft,
           children: [
-            AspectRatio(
-              aspectRatio: _fileDimension.aspectRatio == 0
-                  ? 1
-                  : _fileDimension.aspectRatio,
-              child:
-                  _isGif ? Image.file(widget.video) : VideoPlayer(_controller!),
+            AspectRatio( aspectRatio: _fileDimension.aspectRatio == 0 ? 1 : _fileDimension.aspectRatio,
+              child: _isGif ? Image.file(widget.video) : VideoPlayer(_controller!),
             ),
             Positioned(
               bottom: 0,
               child: FileDescription(
                 description: {
-                  'Video path': widget.video.path,
+                  //'Video path': widget.video.path,
                   if (!_isGif)
-                    'Video duration':
-                        '${((_controller?.value.duration.inMilliseconds ?? 0) / 1000).toStringAsFixed(2)}s',
-                  'Video ratio': Fraction.fromDouble(_fileDimension.aspectRatio)
-                      .reduce()
-                      .toString(),
-                  'Video dimension': _fileDimension.toString(),
-                  'Video size': _fileMbSize,
+                    'Video duration': '${((_controller?.value.duration.inMilliseconds ?? 0) / 1000).toStringAsFixed(2)}s',
+                    'Video ratio': Fraction.fromDouble(_fileDimension.aspectRatio).reduce().toString(),
+                    'Video dimension': _fileDimension.toString(),
+                    'Video size': _fileMbSize,
                 },
+              ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0xff6EA9FF),
+              blurRadius: 8,
+              offset: Offset(2, 2),
+            ),
+          ],
+        ),
+        height: 50,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              flex: 2,
+              child: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Center(
+                  child: Text("Discard",style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: IconButton(
+                onPressed: () {
+                  firebaseUpload.uploadFileInStorage(file: widget.video, type: "Videos", context: context);
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const HomeScreen(),),  (route) => false,);
+                },
+                icon: Center(
+                  child: Text(
+                    "Save",
+                    style: TextStyle(color: const CropGridStyle().selectedBoundariesColor, fontWeight: FontWeight.bold,),
+                  ),
+                ),
               ),
             ),
           ],
@@ -138,10 +186,7 @@ class _CoverResultPopupState extends State<CoverResultPopup> {
               child: FileDescription(
                 description: {
                   'Cover path': widget.cover.path,
-                  'Cover ratio':
-                      Fraction.fromDouble(_fileDimension?.aspectRatio ?? 0)
-                          .reduce()
-                          .toString(),
+                  'Cover ratio': Fraction.fromDouble(_fileDimension?.aspectRatio ?? 0).reduce().toString(),
                   'Cover dimension': _fileDimension.toString(),
                   'Cover size': _fileMbSize,
                 },

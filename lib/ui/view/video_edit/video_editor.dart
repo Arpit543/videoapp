@@ -1,9 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:video_editor/video_editor.dart';
-import 'package:videoapp/core/firebase_upload.dart';
-
 import '../../widget/export_result.dart';
 import 'crop_page.dart';
 import 'export_services.dart';
@@ -21,7 +20,7 @@ class _VideoEditorState extends State<VideoEditor> {
   final _exportingProgress = ValueNotifier<double>(0.0);
   final _isExporting = ValueNotifier<bool>(false);
   final double height = 60;
-  FirebaseUpload firebaseUpload = const FirebaseUpload();
+
 
   late final VideoEditorController _controller = VideoEditorController.file(
     widget.file,
@@ -56,20 +55,11 @@ class _VideoEditorState extends State<VideoEditor> {
 
     await ExportService.runFFmpegCommand(
       await config.getExecuteConfig(),
-      onProgress: (stats) {
-        _exportingProgress.value =
-            config.getFFmpegProgress(stats.getTime().round());
-      },
+      onProgress: (stats) { _exportingProgress.value = config.getFFmpegProgress(stats.getTime().round()); },
       onError: (e, s) => _showErrorSnackBar("Error on export video :("),
       onCompleted: (exportedFile) async {
         _isExporting.value = false;
-        if (!mounted) return;
-        firebaseUpload.uploadFileInStorage(
-            file: exportedFile, type: "Videos", context: context);
-        showDialog(
-          context: context,
-          builder: (_) => VideoResultPopup(video: exportedFile),
-        );
+        Get.to(VideoResultPopup(video: exportedFile));
       },
     );
   }

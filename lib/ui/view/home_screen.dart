@@ -1,7 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:videoapp/core/constants.dart';
+import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/image_editor/image_editor.dart';
+import 'package:videoapp/ui/view/my_work.dart';
 import 'package:videoapp/ui/view/video_edit/video_editor.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -14,8 +18,15 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ImagePicker _picker = ImagePicker();
 
+  FirebaseUpload upload = FirebaseUpload();
   File? galleryFile;
   File? cameraFile;
+
+  @override
+  void initState() {
+    Constants.getString(Constants.name);
+    super.initState();
+  }
 
   Future<void> _pickVideo(int val) async {
     try {
@@ -24,20 +35,11 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       if (pickedFile != null) {
-        setState(() {
-          galleryFile = File(pickedFile.path);
-        });
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VideoEditor(file: galleryFile!),
-          ),
-        );
+        setState(() { galleryFile = File(pickedFile.path); });
+        Navigator.push(context,MaterialPageRoute(builder: (context) => VideoEditor(file: galleryFile!)));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking video: $e')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error picking video: $e')),);
     }
   }
 
@@ -64,9 +66,9 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: const Color(0xff6EA9FF),
         elevation: 0,
         centerTitle: true,
-        title: const Text(
-          "Video App",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          'Hey ${Constants.getString(Constants.name) ?? ""}',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
       body: SafeArea(
@@ -99,7 +101,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     _gridItem(
                       label: "My Work",
-                      onTap: () {}
+                      onTap: () {
+                        Future.delayed(const Duration(milliseconds: 200), () => Get.to(const MyWork()),);
+                      },
                     ),
                   ],
                 ),

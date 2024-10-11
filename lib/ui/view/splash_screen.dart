@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:videoapp/core/constants.dart';
+import 'package:videoapp/ui/view/auth_pages/login.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -13,7 +15,13 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
-    _requestPermissions();
+    Future.delayed(const Duration(seconds: 5), () async {
+      if (Constants.getBool(Constants.isLogin) == true) {
+        Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const HomeScreen(),), (route) => false);
+      } else {
+        Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const Login(),), (route) => false);
+      }
+    });
     super.initState();
   }
 
@@ -25,41 +33,22 @@ class _SplashScreenState extends State<SplashScreen> {
       if (cameraStatus.isDenied) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-                'Camera permission is required for this app. Please enable it from app settings.'),
-            action: SnackBarAction(
-              label: 'Settings',
-              onPressed: () => openAppSettings(),
-            ),
+            content: const Text('Camera permission is required for this app. Please enable it from app settings.'),
+            action: SnackBarAction(label: 'Settings',onPressed: () => openAppSettings(),),
           ),
         );
       }
 
-      if (storageStatus.isDenied) {
+      /*if (storageStatus.isDenied) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-                'Storage permission is required for this app. Please enable it from app settings.'),
-            action: SnackBarAction(
-              label: 'Settings',
-              onPressed: () => openAppSettings(),
-            ),
+            content: const Text('Storage permission is required for this app. Please enable it from app settings.'),
+            action: SnackBarAction(label: 'Settings',onPressed: () => openAppSettings(),),
           ),
         );
-      }
-    } else if (cameraStatus.isGranted && storageStatus.isGranted) {
-      Future.delayed(
-        const Duration(seconds: 5),
-        () async {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const HomeScreen(),
-            ),
-            (route) => false,
-          );
-        },
-      );
+      }*/
+    } else if (cameraStatus.isGranted /*&& storageStatus.isGranted*/) {
+
     }
   }
 
