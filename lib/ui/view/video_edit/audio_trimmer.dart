@@ -1,6 +1,6 @@
 // import 'dart:io';
 //
-// import 'package:easy_audio_trimmer/easy_audio_trimmer.dart';
+// import 'package:easy_audio_trimmer/easy_audio_trimmer.dart' as trim;
 // import 'package:flutter/material.dart';
 //
 // class AudioTrimmerView extends StatefulWidget {
@@ -13,7 +13,7 @@
 // }
 //
 // class _AudioTrimmerViewState extends State<AudioTrimmerView> {
-//   final Trimmer _trimmer = Trimmer();
+//   late trim.Trimmer _trimmer;
 //
 //   double _startValue = 0.0;
 //   double _endValue = 0.0;
@@ -24,6 +24,7 @@
 //
 //   @override
 //   void initState() {
+//     _trimmer = trim.Trimmer();
 //     super.initState();
 //     _loadAudio();
 //   }
@@ -87,8 +88,7 @@
 //                       ),
 //                     ),
 //                     ElevatedButton(
-//                       onPressed: /*_progressVisibility ? null :*/ () =>
-//                           _saveAudio(),
+//                       onPressed: _progressVisibility ? null : () => _saveAudio(),
 //                       child: const Text("SAVE"),
 //                     ),
 //                     SizedBox(
@@ -96,18 +96,18 @@
 //                       child: Center(
 //                         child: Padding(
 //                           padding: const EdgeInsets.all(8.0),
-//                           child: TrimViewer(
+//                           child: trim.TrimViewer(
 //                             trimmer: _trimmer,
 //                             viewerHeight: 100,
 //                             maxAudioLength: const Duration(seconds: 50),
 //                             viewerWidth: MediaQuery.of(context).size.width,
-//                             durationStyle: DurationStyle.FORMAT_MM_SS,
+//                             durationStyle: trim.DurationStyle.FORMAT_MM_SS,
 //                             backgroundColor: Theme.of(context).primaryColor,
 //                             barColor: Colors.white,
 //                             durationTextStyle: TextStyle(color: Theme.of(context).primaryColor),
 //                             allowAudioSelection: true,
-//                             editorProperties: TrimEditorProperties(circleSize: 10,borderPaintColor: Colors.pinkAccent,borderWidth: 4,borderRadius: 5,circlePaintColor: Colors.pink.shade400),
-//                             areaProperties: TrimAreaProperties.edgeBlur(blurEdges: true),
+//                             editorProperties: trim.TrimEditorProperties(circleSize: 10,borderPaintColor: Colors.yellowAccent,borderWidth: 4,borderRadius: 5,circlePaintColor: Colors.yellow.shade400),
+//                             areaProperties: trim.TrimAreaProperties.edgeBlur(blurEdges: true),
 //                             onChangeStart: (value) => _startValue = value,
 //                             onChangeEnd: (value) => _endValue = value,
 //                             onChangePlaybackState: (value) {

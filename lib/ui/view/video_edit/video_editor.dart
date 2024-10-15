@@ -86,28 +86,20 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                                     Stack(
                                       alignment: Alignment.center,
                                       children: [
-                                        CropGridViewer.preview(
-                                            controller: _controller),
+                                        CropGridViewer.preview(controller: _controller),
                                         AnimatedBuilder(
                                           animation: _controller.video,
-                                          child: Container(
-                                            color: Colors.white,
-                                          ),
+                                          child: Container(color: Colors.white,),
                                           builder: (_, __) => AnimatedOpacity(
-                                            opacity:
-                                                _controller.isPlaying ? 0 : 1,
+                                            opacity: _controller.isPlaying ? 0 : 1,
                                             duration: kThemeAnimationDuration,
                                             child: GestureDetector(
                                               onTap: _controller.video.play,
                                               child: Container(
                                                 width: 40,
                                                 height: 40,
-                                                decoration: const BoxDecoration(
-                                                    color: Colors.white,
-                                                    shape: BoxShape.circle),
-                                                child: const Icon(
-                                                  Icons.play_arrow,
-                                                  color: Colors.black,
+                                                decoration: const BoxDecoration(color: Colors.white,shape: BoxShape.circle),
+                                                child: const Icon(Icons.play_arrow,color: Colors.black,
                                                 ),
                                               ),
                                             ),
@@ -124,28 +116,20 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                                 height: 205,
                                 margin: const EdgeInsets.only(top: 5),
                                 child: Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     const TabBar(
                                       tabs: [
-                                        Padding(
-                                            padding: EdgeInsets.all(5),
-                                            child: Icon(Icons.content_cut)),
-                                        Padding(
-                                            padding: EdgeInsets.all(5),
-                                            child: Icon(Icons.video_label)),
-                                        // Padding(padding: EdgeInsets.all(5),child: Icon(Icons.filter)),
+                                        Padding(padding: EdgeInsets.all(5),child: Icon(Icons.content_cut)),
+                                        Padding(padding: EdgeInsets.all(5),child: Icon(Icons.video_label)),
                                       ],
                                     ),
                                     Expanded(
                                       child: TabBarView(
-                                        physics:
-                                            const NeverScrollableScrollPhysics(),
+                                        physics: const NeverScrollableScrollPhysics(),
                                         children: [
                                           Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
+                                            mainAxisAlignment: MainAxisAlignment.center,
                                             children: _trimSlider(),
                                           ),
                                           _coverSelection(),
@@ -171,8 +155,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                                     builder: (_, double value, __) => Center(
                                       child: Text(
                                         "Exporting video ${(value * 100).ceil()}%",
-                                        style: const TextStyle(
-                                            color: Colors.black, fontSize: 16),
+                                        style: const TextStyle(color: Colors.black, fontSize: 16),
                                       ),
                                     ),
                                   ),
@@ -201,16 +184,10 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     ExportService.dispose();
   }
 
-  ///Show Error SnackBar
-  void _showErrorSnackBar(String message) =>
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          duration: const Duration(seconds: 1),
-        ),
-      );
+  ///   Show Error SnackBar
+  void _showErrorSnackBar(String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message),duration: const Duration(seconds: 1),),);
 
-  ///Export Video [_exportVideo]
+  ///   Export Video [_exportVideo]
   void _exportVideo() async {
     _isExporting.value = true;
     _exportingProgress.value = 0;
@@ -220,21 +197,17 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     await ExportService.runFFmpegCommand(
       await config.getExecuteConfig(),
       onProgress: (stats) {
-        _exportingProgress.value =
-            config.getFFmpegProgress(stats.getTime().round());
+        _exportingProgress.value = config.getFFmpegProgress(stats.getTime().round());
       },
       onError: (e, s) => _showErrorSnackBar("Error on export video :("),
       onCompleted: (exportedFile) async {
         _isExporting.value = false;
-        Get.to(VideoResultPopup(
-          video: exportedFile,
-          title: true,
-        ));
+        Get.to(VideoResultPopup(video: exportedFile,title: true,));
       },
     );
   }
 
-  ///Export Video [_exportCover]
+  ///   Export Video [_exportCover]
   void _exportCover() async {
     final config = CoverFFmpegVideoEditorConfig(_controller);
     final execute = await config.getExecuteConfig();
@@ -248,15 +221,12 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
       onError: (e, s) => _showErrorSnackBar("Error on cover exportation :("),
       onCompleted: (cover) {
         if (!mounted) return;
-        showDialog(
-          context: context,
-          builder: (_) => CoverResultPopup(cover: cover),
-        );
+        showDialog(context: context,builder: (_) => CoverResultPopup(cover: cover),);
       },
     );
   }
 
-  ///Rotate, Crop, Save, Volume Up Down
+  ///   Rotate, Crop, Save, Volume Up Down
   Widget _topNavBar() {
     return SafeArea(
       child: SizedBox(
@@ -270,12 +240,9 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                   return IconButton(
                     onPressed: () async {
                       isMuted.value = !isMuted.value;
-                      await _controller.video
-                          .setVolume((isMuted.value) ? 0.0 : 1.0);
+                      await _controller.video.setVolume(value ? 0.0 : 1.0);
                     },
-                    icon: isMuted.value
-                        ? const Icon(Icons.volume_off)
-                        : const Icon(Icons.volume_up),
+                    icon: isMuted.value == false ? const Icon(Icons.volume_off) : const Icon(Icons.volume_up),
                     tooltip: 'Sound',
                   );
                 },
@@ -284,20 +251,14 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
             const VerticalDivider(endIndent: 22, indent: 22),
             Expanded(
               child: IconButton(
-                onPressed: () =>
-                    _controller.rotate90Degrees(RotateDirection.left),
+                onPressed: () => _controller.rotate90Degrees(RotateDirection.left),
                 icon: const Icon(Icons.rotate_left),
                 tooltip: 'Rotate unClockwise',
               ),
             ),
             Expanded(
               child: IconButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (context) => CropPage(controller: _controller),
-                  ),
-                ),
+                onPressed: () => Navigator.push(context,MaterialPageRoute<void>(builder: (context) => CropPage(controller: _controller),),),
                 icon: const Icon(Icons.crop),
                 tooltip: 'Open crop screen',
               ),
@@ -311,8 +272,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
             ),
             Expanded(
               child: IconButton(
-                onPressed: () =>
-                    _controller.rotate90Degrees(RotateDirection.right),
+                onPressed: () => _controller.rotate90Degrees(RotateDirection.right),
                 icon: const Icon(Icons.rotate_right),
                 tooltip: 'Rotate clockwise',
               ),
@@ -323,14 +283,8 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                 tooltip: 'Open export menu',
                 icon: const Icon(Icons.save),
                 itemBuilder: (context) => [
-                  PopupMenuItem(
-                    onTap: () => _exportCover(),
-                    child: const Text('Export cover'),
-                  ),
-                  PopupMenuItem(
-                    onTap: () => _exportVideo(),
-                    child: const Text('Export video'),
-                  ),
+                  PopupMenuItem(onTap: () => _exportCover(),child: const Text('Export cover'),),
+                  PopupMenuItem(onTap: () => _exportVideo(),child: const Text('Export video'),),
                 ],
               ),
             ),
@@ -340,13 +294,13 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     );
   }
 
-  ///Formatter for length
+  ///   Formatter for length
   String formatter(Duration duration) => [
         duration.inMinutes.remainder(60).toString().padLeft(2, '0'),
         duration.inSeconds.remainder(60).toString().padLeft(2, '0')
       ].join(":");
 
-  ///Slider for trim Video
+  ///   Slider for trim Video
   List<Widget> _trimSlider() {
     return [
       AnimatedBuilder(
@@ -393,12 +347,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     ];
   }
 
-  ///Filter applied to video
-  Widget _filterOption() {
-    return const SizedBox.shrink();
-  }
-
-  ///To get Song from URL [fetchSongs]
+  ///   To get Song from URL [fetchSongs]
   Future<List<Song>> fetchSongs() async {
     final String response =
         await rootBundle.loadString('assets/json/music.json');
@@ -406,7 +355,78 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     return jsonList.map((json) => Song.fromJson(json)).toList();
   }
 
-  ///Show Music Bottom Sheet
+  ///   Merge Audio and Video [mergeAudioAndVideo]
+  Future<String> mergeAudioAndVideo(String videoPath, String audioUrl) async {
+    try {
+      final Directory appDir = await getApplicationDocumentsDirectory();
+      final String audioPath = '${appDir.path}/temp_audio.mp3';
+
+      final http.Response response = await http.get(Uri.parse(audioUrl));
+      if (response.statusCode == 200) {
+        final File audioFile = File(audioPath);
+        await audioFile.writeAsBytes(response.bodyBytes);
+        print("Audio File :- ${audioFile.writeAsBytes(response.bodyBytes)}");
+      } else {
+        throw Exception('Failed to download audio');
+      }
+
+      final Directory? externalDir = await getExternalStorageDirectory();
+      final String basePath = '${externalDir?.parent.parent.parent.parent.path}/Download/';
+
+      String outputPath = getUniqueFilePath(basePath, "output", "mp4");
+
+      final File videoFile = File(videoPath);
+      final File audioFile = File(audioPath);
+
+      if (!await videoFile.exists()) {
+        throw Exception('Video file does not exist at: $videoPath');
+      }
+      if (!await audioFile.exists()) {
+        throw Exception('Audio file does not exist at: $audioPath');
+      }
+
+      print("Video Path: $videoPath");
+      print("Audio Path: $audioPath");
+      print("Output Path: $outputPath");
+
+      final String command = "-y -i $videoPath -i $audioPath -map 0:v -map 1:a -c:v copy -shortest $outputPath";
+
+      await FFmpegKit.execute(command).then((session) async {
+        final returnCode = await session.getReturnCode();
+        final log = await session.getAllLogs();
+        log.forEach((log) {
+          print(log.getMessage());
+        });
+
+        if (ReturnCode.isSuccess(returnCode)) {
+          return outputPath;
+        } else if (ReturnCode.isCancel(returnCode)) {
+          throw Exception('FFmpeg command was canceled');
+        } else {
+          throw Exception('FFmpeg command failed');
+        }
+      });
+
+      print("Output Path: $outputPath");
+      return outputPath;
+    } catch (e) {
+      throw Exception('Error merging audio and video: $e');
+    }
+  }
+
+  String getUniqueFilePath(String basePath, String fileName, String extension) {
+    int count = 0;
+    String fullPath = '$basePath$fileName.$extension';
+
+    while (File(fullPath).existsSync()) {
+      count++;
+      fullPath = '$basePath$fileName$count.$extension';
+    }
+
+    return fullPath;
+  }
+
+  ///   Show Music Bottom Sheet
   void _showMusicBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -439,222 +459,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     );
   }
 
-  Future<String> getOutputFilePath() async {
-    final directory = await getExternalStorageDirectory();
-    return "${directory?.path}/merged.mp4";
-  }
-
-  bool loading = false, isPlaying = false;
-  dynamic limit = 10;
-  late double startTime = 0, endTime = 10;
-
-  void setTimeLimit(dynamic value) async {
-    limit = value;
-    notifyListeners();
-  }
-
-  /*Future<String> mergeAudioAndVideo(String videoPath, String audioUrl) async {
-    try {
-      final Directory appDir = await getApplicationDocumentsDirectory();
-      final String audioPath = '${appDir.path}/temp_audio.mp3';
-
-      final http.Response response = await http.get(Uri.parse(audioUrl));
-      if (response.statusCode == 200) {
-        final File audioFile = File(audioPath);
-        await audioFile.writeAsBytes(response.bodyBytes);
-      } else {
-        throw Exception('Failed to download audio');
-      }
-
-      final Directory? externalDir = await getExternalStorageDirectory();
-      final String basePath = '${externalDir?.parent.parent.parent.parent.path}/Download/';
-
-      String outputPath = '${basePath}output.mp4';
-
-      print("Video Path: $videoPath");
-      print("Audio Path: $audioPath");
-      print("Output Path: $outputPath");
-
-      final String ffmpegCommand =
-          '-i $videoPath -i $audioPath -c:v copy -c:a aac $outputPath';
-
-      await FFmpegKit.execute(ffmpegCommand).then((session) async {
-        final returnCode = await session.getReturnCode();
-        final log = await session.getAllLogs();
-        log.forEach((log) {
-          print("Log Message :- ${log.getMessage()}");
-        });
-
-        if (ReturnCode.isSuccess(returnCode)) {
-          return outputPath;
-        } else if (ReturnCode.isCancel(returnCode)) {
-          throw Exception('FFmpeg command was canceled');
-        } else {
-          throw Exception('FFmpeg command failed');
-        }
-      });
-
-      print("Output Path: $outputPath");
-      return outputPath;
-    } catch (e) {
-      throw Exception('Error merging audio and video: $e');
-    }
-  }*/
-
-
-
-  Future<String> mergeAudioAndVideo(String videoPath, String audioUrl) async {
-    try {
-      // Get the temporary directory for storing audio file
-      final Directory appDir = await getApplicationDocumentsDirectory();
-      final String audioPath = '${appDir.path}/temp_audio.mp3';
-
-      // Print the temporary audio path for debugging
-      print("Temporary Audio Path: $audioPath");
-
-      // Download the audio file
-      final http.Response response = await http.get(Uri.parse(audioUrl));
-
-      // Check if the response is successful
-      if (response.statusCode == 200) {
-        final File audioFile = File(audioPath);
-        await audioFile.writeAsBytes(response.bodyBytes);
-        print("Audio downloaded and saved at: $audioPath");
-      } else {
-        throw Exception('Failed to download audio: ${response.statusCode} ${response.reasonPhrase}');
-      }
-
-      // Get the external storage directory (Downloads folder)
-      final Directory? externalDir = await getExternalStorageDirectory();
-      final String basePath = '${externalDir?.parent.parent.parent.parent.path}/Download/';
-
-      // Create a unique output path by checking if the file exists
-      String outputPath = getUniqueFilePath(basePath, "output", "mp4");
-
-      // Validate the video file
-      final File videoFile = File(videoPath);
-      if (!await videoFile.exists()) {
-        throw Exception('Video file does not exist at: $videoPath');
-      }
-
-      // Print paths for debugging
-      print("Video Path: $videoPath");
-      print("Audio Path: $audioPath");
-      print("Output Path: $outputPath");
-
-      // FFmpeg command to merge the video and audio
-      final String ffmpegCommand = '-y -i "$videoPath" -i "$audioPath" -c:v copy -c:a aac -shortest "$outputPath"';
-
-      // Execute the FFmpeg command
-      await FFmpegKit.execute(ffmpegCommand).then((session) async {
-        final returnCode = await session.getReturnCode();
-        final log = await session.getAllLogs();
-        log.forEach((log) {
-          print(log.getMessage());
-        });
-
-        if (ReturnCode.isSuccess(returnCode)) {
-          return outputPath;
-        } else if (ReturnCode.isCancel(returnCode)) {
-          throw Exception('FFmpeg command was canceled');
-        } else {
-          throw Exception('FFmpeg command failed with return code: $returnCode');
-        }
-      });
-
-      print("Output Path: $outputPath");
-      return outputPath;
-    } catch (e) {
-      throw Exception('Error merging audio and video: $e');
-    }
-  }
-
-// Helper function to generate a unique file path
-  String getUniqueFilePath(String basePath, String fileName, String extension) {
-    int count = 0;
-    String fullPath = '$basePath$fileName.$extension';
-
-    while (File(fullPath).existsSync()) {
-      count++;
-      fullPath = '$basePath$fileName$count.$extension';
-    }
-
-    return fullPath;
-  }
-
-
- /* Future<String> mergeAudioAndVideo(String videoPath, String audioUrl) async {
-    try {
-      final Directory appDir = await getApplicationDocumentsDirectory();
-      final String audioPath = '${appDir.path}/temp_audio.mp3';
-
-      final http.Response response = await http.get(Uri.parse(audioUrl));
-      if (response.statusCode == 200) {
-        final File audioFile = File(audioPath);
-        await audioFile.writeAsBytes(response.bodyBytes);
-
-        print("Audio File :- ${audioFile.writeAsBytes(response.bodyBytes)}");
-      } else {
-        throw Exception('Failed to download audio');
-      }
-
-      final Directory? externalDir = await getExternalStorageDirectory();
-      final String basePath = '${externalDir?.parent.parent.parent.parent.path}/Download/';
-
-      String outputPath = getUniqueFilePath(basePath, "output", "mp4");
-
-      final File videoFile = File(videoPath);
-      final File audioFile = File(audioPath);
-
-      if (!await videoFile.exists()) {
-        throw Exception('Video file does not exist at: $videoPath');
-      }
-      if (!await audioFile.exists()) {
-        throw Exception('Audio file does not exist at: $audioPath');
-      }
-
-      print("Video Path: $videoPath");
-      print("Audio Path: $audioPath");
-      print("Output Path: $outputPath");
-
-      final String ffmpegCommand = '-y -i "$videoPath" -i "$audioPath" -c:v copy -c:a aac -shortest "$outputPath"';
-
-      await FFmpegKit.execute(ffmpegCommand).then((session) async {
-        final returnCode = await session.getReturnCode();
-        final log = await session.getAllLogs();
-        log.forEach((log) {
-          print(log.getMessage());
-        });
-
-        if (ReturnCode.isSuccess(returnCode)) {
-          return outputPath;
-        } else if (ReturnCode.isCancel(returnCode)) {
-          throw Exception('FFmpeg command was canceled');
-        } else {
-          throw Exception('FFmpeg command failed');
-        }
-      });
-
-      print("Output Path: $outputPath");
-      return outputPath;
-    } catch (e) {
-      throw Exception('Error merging audio and video: $e');
-    }
-  }
-
-  String getUniqueFilePath(String basePath, String fileName, String extension) {
-    int count = 0;
-    String fullPath = '$basePath$fileName.$extension';
-
-    while (File(fullPath).existsSync()) {
-      count++;
-      fullPath = '$basePath$fileName$count.$extension';
-    }
-
-    return fullPath;
-  }
-*/
-  ///Show Music List
+  ///   Show Music List
   Widget _musicList() {
     return FutureBuilder<List<Song>>(
       future: fetchSongs(),
@@ -670,7 +475,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                 padding: const EdgeInsets.all(8.0),
                 child: InkWell(
                   onTap: () async {
-                    String videoPath = widget.file.path;
+                   /* String videoPath = widget.file.path;
                     String audioUrl = song.url;
 
                     print("Audio $audioUrl");
@@ -678,9 +483,8 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                       print('Merged video saved at $outputPath');
                     }).catchError((error) {
                       print('Error: $error');
-                    });
-
-                    Navigator.pop(context);
+                    });*/
+                    downloadAndTrimAudio(song.url, context);
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -733,27 +537,23 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                             ],
                           ),
                           ValueListenableBuilder(
-                              valueListenable: isSelectedPlayIndex,
-                              builder: (context, indexValue, _) {
-                                return IconButton(
-                                  onPressed: () async {
-                                    if (indexValue == index) {
-                                      isSelectedPlayIndex.value = -1;
-                                      Future.delayed(
-                                          const Duration(milliseconds: 300),
-                                          () async => await player.pause());
-                                    } else {
-                                      isSelectedPlayIndex.value = index;
-                                      await player.setAudioSource(
-                                          AudioSource.uri(Uri.parse(song.url)));
-                                      await player.play();
-                                    }
-                                  },
-                                  icon: indexValue == index
-                                      ? const Icon(Icons.pause)
-                                      : const Icon(Icons.play_arrow),
-                                );
-                              }),
+                            valueListenable: isSelectedPlayIndex,
+                            builder: (context, indexValue, _) {
+                              return IconButton(
+                                onPressed: () async {
+                                  if (indexValue == index) {
+                                    isSelectedPlayIndex.value = -1;
+                                    Future.delayed(const Duration(milliseconds: 300),() async => await player.pause());
+                                  } else {
+                                    isSelectedPlayIndex.value = index;
+                                    await player.setAudioSource(AudioSource.uri(Uri.parse(song.url)));
+                                    await player.play();
+                                  }
+                                },
+                                icon: indexValue == index ? const Icon(Icons.pause) : const Icon(Icons.play_arrow),
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -768,6 +568,29 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
         return const CircularProgressIndicator();
       },
     );
+  }
+
+
+  Future<void> downloadAndTrimAudio(String url, BuildContext context) async {
+
+    final Directory appDir = await getApplicationDocumentsDirectory();
+    final String audioPath = '${appDir.path}/temp_audio.mp3';
+
+    final http.Response response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final File audioFile = File(audioPath);
+
+      await audioFile.writeAsBytes(response.bodyBytes);
+
+     /* Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => AudioTrimmerView(file: audioFile)),
+      );*/
+
+      print("Audio File saved at: $audioPath");
+    } else {
+      throw Exception('Failed to download audio');
+    }
   }
 
   ///Create Covers From Video

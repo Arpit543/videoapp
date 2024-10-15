@@ -16,6 +16,8 @@ Future<void> _getImageDimension(File file,{required Function(Size) onResult}) as
 
 String _fileMBSize(File file) => ' ${(file.lengthSync() / (1024 * 1024)).toStringAsFixed(1)} MB';
 
+
+/// Class to show Video after edit [VideoResultPopup]
 class VideoResultPopup extends StatefulWidget {
   final File video;
   final bool title;
@@ -154,6 +156,8 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
   }
 }
 
+
+/// Class to show Cover Image from image and video [CoverResultPopup]
 class CoverResultPopup extends StatefulWidget {
   const CoverResultPopup({super.key, required this.cover});
 
@@ -204,6 +208,8 @@ class _CoverResultPopupState extends State<CoverResultPopup> {
   }
 }
 
+
+/// Show File Description When Video or Image file Exported
 class FileDescription extends StatelessWidget {
   const FileDescription({super.key, required this.description});
 
