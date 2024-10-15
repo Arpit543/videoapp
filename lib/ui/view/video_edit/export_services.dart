@@ -1,11 +1,11 @@
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:ffmpeg_kit_flutter_min/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_min/ffmpeg_kit_config.dart';
-import 'package:ffmpeg_kit_flutter_min/ffmpeg_session.dart';
-import 'package:ffmpeg_kit_flutter_min/return_code.dart';
-import 'package:ffmpeg_kit_flutter_min/statistics.dart';
+import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit_config.dart';
+import 'package:ffmpeg_kit_flutter_full/ffmpeg_session.dart';
+import 'package:ffmpeg_kit_flutter_full/return_code.dart';
+import 'package:ffmpeg_kit_flutter_full/statistics.dart';
 import 'package:video_editor/video_editor.dart';
 
 class ExportService {
@@ -14,7 +14,8 @@ class ExportService {
     if (executions.isNotEmpty) await FFmpegKit.cancel();
   }
 
-  static Future<FFmpegSession> runFFmpegCommand(FFmpegVideoEditorExecute execute, {required void Function(File file) onCompleted,void Function(Object, StackTrace)? onError,void Function(Statistics)? onProgress,}) {
+  static Future<FFmpegSession> runFFmpegCommand(FFmpegVideoEditorExecute execute,
+      {required void Function(File file) onCompleted,void Function(Object, StackTrace)? onError,void Function(Statistics)? onProgress,}) {
     log('FFmpeg start process with command = ${execute.command}');
     return FFmpegKit.executeAsync(
       execute.command,(session) async {

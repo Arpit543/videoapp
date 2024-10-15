@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:ffmpeg_kit_flutter_min/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_min/return_code.dart';
+import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_full/return_code.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -12,6 +12,7 @@ import 'package:video_editor/video_editor.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/core/model/song_model.dart';
 import 'package:http/http.dart' as http;
+import 'package:videoapp/ui/view/video_edit/audio_trimmer.dart';
 import 'crop_page.dart';
 import 'export_result.dart';
 import 'export_services.dart';
@@ -579,13 +580,8 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     final http.Response response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
       final File audioFile = File(audioPath);
-
       await audioFile.writeAsBytes(response.bodyBytes);
-
-     /* Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => AudioTrimmerView(file: audioFile)),
-      );*/
+      Navigator.push(context,MaterialPageRoute(builder: (context) => AudioTrimmerView(file: audioFile)),);
 
       print("Audio File saved at: $audioPath");
     } else {

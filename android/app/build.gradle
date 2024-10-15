@@ -49,9 +49,3 @@ android {
 flutter {
     source = "../.."
 }
-
-dependencies {
-    implementation ('com.arthenica:ffmpeg-kit-https:6.0-2') {
-        exclude group: 'com.arthenica.ffmpegkit', module: 'ffmpeg-kit-min'
-    }
-}
