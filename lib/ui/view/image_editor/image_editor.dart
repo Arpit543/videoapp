@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pro_image_editor/models/editor_callbacks/pro_image_editor_callbacks.dart';
+import 'package:pro_image_editor/models/editor_configs/pro_image_editor_configs.dart';
 import 'package:pro_image_editor/modules/main_editor/main_editor.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
@@ -45,10 +46,11 @@ class _ImageEditorState extends State<ImageEditor> {
         color: Colors.white,
         child: ProImageEditor.file(
           widget.file,
+          configs: const ProImageEditorConfigs(),
           callbacks: ProImageEditorCallbacks(
             onImageEditingComplete: (Uint8List bytes) async {
               File editedImageFile = await _convertBytesToFile(bytes);
-              await upload.uploadFileInStorage(file: editedImageFile,type: "Images",context: context,);
+              await upload.uploadFileInStorage(file: editedImageFile, type: "Images", context: context,);
               Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const HomeScreen(),),(route) => false,
               );
             },

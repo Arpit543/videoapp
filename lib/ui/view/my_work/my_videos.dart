@@ -49,7 +49,7 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                         itemCount: upload.lenVideos,
                         padding: const EdgeInsets.all(8),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
+                          crossAxisCount: 4,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
                           childAspectRatio: 1,
@@ -63,21 +63,36 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                               quality: 100,
                             ),
                             builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) {
-                                return const Center(child: CircularProgressIndicator());
-                              } else if (snapshot.hasError) {
+                              if (snapshot.hasError) {
                                 return const Icon(Icons.error);
                               } else if (snapshot.hasData) {
-                                return InkWell(
-                                  onTap: () async {
-                                    File file = await CachedFileHelper.urlToFile(upload.videoURLs[index]);
-                                    Get.to(VideoResultPopup(video: file, title: false));
-                                  },
-                                  child: Image.file(
-                                    File(snapshot.data!),
-                                    height: 100,
-                                    width: 100,
-                                    fit: BoxFit.cover,
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.black),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Colors.white,
+                                        blurRadius: 8,
+                                        offset: Offset(2, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: InkWell(
+                                    onTap: () async {
+                                      File file = await CachedFileHelper.urlToFile(upload.videoURLs[index]);
+                                      Get.to(VideoResultPopup(video: file, title: false));
+                                    },
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Image.file(
+                                        File(snapshot.data!),
+                                        height: 100,
+                                        width: 100,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
                                   ),
                                 );
                               } else {
@@ -97,14 +112,6 @@ class _MyVideosWorkState extends State<MyVideosWork> {
       ),
     );
   }
-
-/*  Future<File> urlToFile(String imageUrl) async {
-    var response = await http.get(Uri.parse(imageUrl));
-    var documentDirectory = await getApplicationDocumentsDirectory();
-    var filePath = '${documentDirectory.path}/temp_file.jpg';
-    File file = File(filePath);
-    return file.writeAsBytes(response.bodyBytes);
-  }*/
 }
 
 class CachedFileHelper {

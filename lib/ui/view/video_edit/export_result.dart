@@ -83,8 +83,11 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
         child: Stack(
           alignment: Alignment.bottomLeft,
           children: [
-            AspectRatio( aspectRatio: _fileDimension.aspectRatio == 0 ? 1 : _fileDimension.aspectRatio,
-              child: _isGif ? Image.file(widget.video) : VideoPlayer(_controller!),
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              child: AspectRatio( aspectRatio: _fileDimension.aspectRatio == 0 ? 1 : _fileDimension.aspectRatio,
+                child: _isGif ? Image.file(widget.video) : VideoPlayer(_controller!),
+              ),
             ),
             Positioned(
               bottom: 0,
@@ -101,7 +104,8 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
           ],
         ),
       ),
-      bottomNavigationBar:  widget.title ?  Container(
+      bottomNavigationBar:  widget.title ?
+      Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -144,7 +148,8 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
             ),
           ],
         ),
-      ) : const SizedBox.shrink(),
+      ) :
+      const SizedBox.shrink(),
     );
   }
 }

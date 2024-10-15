@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:video_editor/video_editor.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/auth_pages/login.dart';
 import 'package:videoapp/ui/widget/common_button.dart';
@@ -136,11 +135,11 @@ class _RegisterState extends State<Register> {
                       onPressed: () {
                         Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const Login(),), (route) => false);
                       },
-                      icon: Center(
+                      icon: const Center(
                         child: Text(
                           "Have an account? Sign In",
                           style: TextStyle(
-                            color: const CropGridStyle().background,
+                            color: Colors.black,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:video_editor/video_editor.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/auth_pages/register.dart';
 import 'package:videoapp/ui/widget/common_button.dart';
@@ -127,11 +125,11 @@ class _LoginState extends State<Login> {
                       onPressed: () {
                         Navigator.push(context, MaterialPageRoute(builder: (context) => const Register(),));
                       },
-                      icon: Center(
+                      icon: const Center(
                         child: Text(
                           "Don't have account? Sign Up",
                           style: TextStyle(
-                            color: const CropGridStyle().background,
+                            color: Colors.black,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

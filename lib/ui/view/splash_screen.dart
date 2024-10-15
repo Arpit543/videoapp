@@ -22,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _requestPermissions() async {
     final cameraStatus = await Permission.camera.request();
     final storageStatus = await Permission.storage.request();
-/*
+
     if (cameraStatus.isDenied || storageStatus.isDenied) {
       if (cameraStatus.isDenied) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -49,15 +49,7 @@ class _SplashScreenState extends State<SplashScreen> {
           Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const Login()), (route) => false);
         }
       });
-    }*/
-
-    Future.delayed(const Duration(seconds: 5), () async {
-      if (Constants.getBool(Constants.isLogin) == true) {
-        Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const HomeScreen()), (route) => false);
-      } else {
-        Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const Login()), (route) => false);
-      }
-    });
+    }
   }
 
   @override

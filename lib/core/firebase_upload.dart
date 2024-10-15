@@ -1,6 +1,4 @@
 import 'dart:io';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -136,8 +134,7 @@ class FirebaseUpload {
       if (kDebugMode) {
         print('Error: $e');
       }
-      showSnackBar(message: 'Registration failed: ${e.message}',
-        context: context,
+      showSnackBar(message: 'Registration failed: ${e.message}',context: context,
         isError: true,);
     }
   }
@@ -186,7 +183,7 @@ class FirebaseUpload {
   }
 
   ///   Reset Password Using Link
-  Future<void> resetPasswordAndNotify(String email,
+/*  Future<void> resetPasswordAndNotify(String email,
       BuildContext context) async {
     try {
       QuerySnapshot userSnapshot = await FirebaseFirestore.instance.collection('User').where('email', isEqualTo: email).limit(1).get();
@@ -219,7 +216,7 @@ class FirebaseUpload {
     } catch (e) {
       showSnackBar(message: 'An error occurred while processing your request. Please try again.',context: context,isError: false);
     }
-  }
+  }*/
 
   ///   Logout Your Session
   Future<void> logout(BuildContext context) async {

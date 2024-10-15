@@ -51,16 +51,33 @@ class _MyImagesWorkState extends State<MyImagesWork> {
                           childAspectRatio: 1,
                         ),
                         itemBuilder: (context, index) {
-                          return InkWell(
-                            onTap: () {
-                              Get.to(FullScreenImageViewer( imageUrl: upload.imageURLs[index],));
-                            },
-                            child: Image.network(
-                              upload.imageURLs[index],
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(Icons.error);
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.black),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.white,
+                                  blurRadius: 8,
+                                  offset: Offset(2, 2),
+                                ),
+                              ],
+                            ),
+                            child: InkWell(
+                              onTap: () {
+                                Get.to(FullScreenImageViewer( imageUrl: upload.imageURLs[index],));
                               },
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.network(
+                                  upload.imageURLs[index],
+                                  fit: BoxFit.fill,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(Icons.error);
+                                  },
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -93,6 +110,9 @@ class FullScreenImageViewer extends StatelessWidget {
       ),
       body: Center(
         child: PhotoView(
+          filterQuality: FilterQuality.high,
+          enableRotation: true,
+          strictScale: true,
           imageProvider: NetworkImage(imageUrl),
           backgroundDecoration: const BoxDecoration(color: Colors.white),
         ),

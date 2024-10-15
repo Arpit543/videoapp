@@ -40,37 +40,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _pickVideo(int val) async {
     try {
-      final pickedFile = await _picker.pickVideo(
-        source: val == 0 ? ImageSource.gallery : ImageSource.camera,
-      );
+      final pickedFile = await _picker.pickVideo(source: val == 0 ? ImageSource.gallery : ImageSource.camera,);
 
       if (pickedFile != null) {
         setState(() {
           galleryFile = File(pickedFile.path);
         });
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => VideoEditor(file: galleryFile!)));
+        Navigator.push(context,MaterialPageRoute(builder: (context) => VideoEditor(file: File(pickedFile.path))));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error picking video: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error picking video: $e')));
     }
   }
 
   Future<void> _pickImages(int val) async {
-    final pickedFile = await _picker.pickImage(
-      source: val == 0 ? ImageSource.gallery : ImageSource.camera,
-    );
+    final pickedFile = await _picker.pickImage(source: val == 0 ? ImageSource.gallery : ImageSource.camera,);
     if (pickedFile != null) {
       setState(() {
         cameraFile = File(pickedFile.path);
       });
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => ImageEditor(file: cameraFile!)));
+      Navigator.push(context,MaterialPageRoute(builder: (context) => ImageEditor(file: cameraFile!)));
     }
   }
 
