@@ -9,20 +9,21 @@ import 'package:video_player/video_player.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
 
-Future<void> _getImageDimension(File file,{required Function(Size) onResult}) async {
+Future<void> _getImageDimension(File file,
+    {required Function(Size) onResult}) async {
   var decodedImage = await decodeImageFromList(file.readAsBytesSync());
   onResult(Size(decodedImage.width.toDouble(), decodedImage.height.toDouble()));
 }
 
-String _fileMBSize(File file) => ' ${(file.lengthSync() / (1024 * 1024)).toStringAsFixed(1)} MB';
-
+String _fileMBSize(File file) =>
+    ' ${(file.lengthSync() / (1024 * 1024)).toStringAsFixed(1)} MB';
 
 /// Class to show Video after edit [VideoResultPopup]
 class VideoResultPopup extends StatefulWidget {
   final File video;
   final bool title;
-  const VideoResultPopup({super.key, required this.video, required this.title});
 
+  const VideoResultPopup({super.key, required this.video, required this.title});
 
   @override
   State<VideoResultPopup> createState() => _VideoResultPopupState();
@@ -32,7 +33,8 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
   VideoPlayerController? _controller;
   FileImage? _fileImage;
   Size _fileDimension = Size.zero;
-  late final bool _isGif = path.extension(widget.video.path).toLowerCase() == ".gif";
+  late final bool _isGif =
+      path.extension(widget.video.path).toLowerCase() == ".gif";
   late String _fileMbSize;
   FirebaseUpload firebaseUpload = FirebaseUpload();
 
@@ -69,90 +71,130 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color(0xff6EA9FF),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        centerTitle: true,
-        title: Text(
-          widget.title ? "Edited Video" : "",
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: Center(
-        child: Expanded(
-          child: Stack(
-            alignment: Alignment.bottomLeft,
-            children: [
-              AspectRatio( aspectRatio: _fileDimension.aspectRatio == 0 ? 1 : _fileDimension.aspectRatio,
-                child: _isGif ? Image.file(widget.video) : VideoPlayer(_controller!),
-              ),
-              Positioned(
-                bottom: 0,
-                child: widget.title ? FileDescription(
-                  description: {
-                    if (!_isGif)
-                      'Video duration': '${((_controller?.value.duration.inMilliseconds ?? 0) / 1000).toStringAsFixed(2)}s',
-                      'Video ratio': Fraction.fromDouble(_fileDimension.aspectRatio).reduce().toString(),
-                      'Video dimension': _fileDimension.toString(),
-                      'Video size': _fileMbSize,
-                  },
-                ): const SizedBox.shrink(),
-              ),
-            ],
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: const Color(0xff6EA9FF),
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
+          centerTitle: true,
+          title: Text(
+            widget.title ? "Edited Video" : "",
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
           ),
         ),
-      ),
-      bottomNavigationBar:  widget.title ? Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0xff6EA9FF),
-              blurRadius: 8,
-              offset: Offset(2, 2),
-            ),
-          ],
-        ),
-        height: 50,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        body: Column(
           children: [
             Expanded(
-              flex: 2,
-              child: IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Center(
-                  child: Text("Discard",style: TextStyle(fontWeight: FontWeight.bold),
+              child: Stack(
+                alignment: Alignment.bottomLeft,
+                children: [
+                  AspectRatio(
+                    aspectRatio: _fileDimension.aspectRatio != 0
+                        ? _fileDimension.aspectRatio
+                        : 1,
+                    child: _isGif
+                        ? Image.file(widget.video, fit: BoxFit.cover)
+                        : SizedBox(
+                      height: MediaQuery.of(context).size.height,
+                        child: VideoPlayer(_controller!)),
                   ),
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: IconButton(
-                onPressed: () {
-                  firebaseUpload.uploadFileInStorage(file: widget.video, type: "Videos", context: context);
-                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const HomeScreen(),),  (route) => false,);
-                },
-                icon: Center(
-                  child: Text(
-                    "Save",
-                    style: TextStyle(color: const CropGridStyle().selectedBoundariesColor, fontWeight: FontWeight.bold,),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: widget.title
+                        ? FileDescription(
+                            description: {
+                              if (!_isGif)
+                                'Video duration':
+                                    '${((_controller?.value.duration.inMilliseconds ?? 0) / 1000).toStringAsFixed(2)}s',
+                              'Video ratio': Fraction.fromDouble(
+                                      _fileDimension.aspectRatio)
+                                  .reduce()
+                                  .toString(),
+                              'Video dimension': _fileDimension.toString(),
+                              'Video size': _fileMbSize,
+                            },
+                          )
+                        : const SizedBox(
+                            height: 10,
+                          ),
                   ),
-                ),
+                ],
               ),
             ),
           ],
         ),
-      ) : const SizedBox.shrink(),
+        bottomNavigationBar: widget.title
+            ? Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xff6EA9FF),
+                      blurRadius: 8,
+                      offset: Offset(0, -2), // Adjust shadow for better effect
+                    ),
+                  ],
+                ),
+                height: 50,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          "Discard",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xff6EA9FF),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: TextButton(
+                        onPressed: () {
+                          firebaseUpload.uploadFileInStorage(
+                            file: widget.video,
+                            type: "Videos",
+                            context: context,
+                          );
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const HomeScreen()),
+                            (route) => false,
+                          );
+                        },
+                        child: Text(
+                          "Save",
+                          style: TextStyle(
+                            color:
+                                const CropGridStyle().selectedBoundariesColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : const SizedBox(height: 50),
+      ),
     );
   }
 }
-
 
 /// Class to show Cover Image from image and video [CoverResultPopup]
 class CoverResultPopup extends StatefulWidget {
@@ -185,17 +227,48 @@ class _CoverResultPopupState extends State<CoverResultPopup> {
       padding: const EdgeInsets.all(30),
       child: Center(
         child: Stack(
+          alignment: Alignment.bottomCenter,
           children: [
-            Image.memory(_imagebytes),
-            Positioned(
-              bottom: 0,
-              child: FileDescription(
-                description: {
-                  'Cover path': widget.cover.path,
-                  'Cover ratio': Fraction.fromDouble(_fileDimension?.aspectRatio ?? 0).reduce().toString(),
-                  'Cover dimension': _fileDimension.toString(),
-                  'Cover size': _fileMbSize,
-                },
+            ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: Image.memory(
+                _imagebytes,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: 300,
+              ),
+            ),
+            Container(
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(15)),
+              ),
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Cover Details',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  FileDescription(
+                    description: {
+                      'Cover path': widget.cover.path,
+                      'Cover ratio':
+                          Fraction.fromDouble(_fileDimension?.aspectRatio ?? 0)
+                              .reduce()
+                              .toString(),
+                      'Cover dimension':
+                          _fileDimension?.toString() ?? 'Unknown',
+                      'Cover size': _fileMbSize,
+                    },
+                  ),
+                ],
               ),
             ),
           ],
@@ -205,7 +278,6 @@ class _CoverResultPopupState extends State<CoverResultPopup> {
   }
 }
 
-
 /// Show File Description When Video or Image file Exported
 class FileDescription extends StatelessWidget {
   const FileDescription({super.key, required this.description});
@@ -214,36 +286,47 @@ class FileDescription extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTextStyle(
-      style: const TextStyle(fontSize: 11),
-      child: Container(
-        width: MediaQuery.of(context).size.width - 60,
-        padding: const EdgeInsets.all(10),
-        color: Colors.black.withOpacity(0.5),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: description.entries
-              .map(
-                (entry) => Text.rich(
-                  TextSpan(
+    return Container(
+      width: MediaQuery.of(context).size.width - 60,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.7), // Slightly darker for contrast
+        borderRadius: BorderRadius.circular(8), // Rounded corners
+      ),
+      child: ListView(
+        shrinkWrap: true,
+        // Allows the ListView to take only the needed space
+        physics: const NeverScrollableScrollPhysics(),
+        // Disable scrolling for smooth integration
+        children: description.entries
+            .map(
+              (entry) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2.0),
+                child: RichText(
+                  text: TextSpan(
                     children: [
                       TextSpan(
                         text: '${entry.key}: ',
-                        style: const TextStyle(fontSize: 11),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold, // Bold for keys
+                          color: Colors.white, // Ensure visibility
+                        ),
                       ),
                       TextSpan(
                         text: entry.value,
                         style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 11,
+                          color: Colors.white.withOpacity(
+                              0.85), // Slightly higher opacity for value
                         ),
                       ),
                     ],
                   ),
                 ),
-              )
-              .toList(),
-        ),
+              ),
+            )
+            .toList(),
       ),
     );
   }

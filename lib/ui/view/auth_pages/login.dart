@@ -17,7 +17,7 @@ class _LoginState extends State<Login> {
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-
+  bool _isLoading = false; // Loading state for button
 
   @override
   Widget build(BuildContext context) {
@@ -36,28 +36,32 @@ class _LoginState extends State<Login> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(20),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: MediaQuery.of(context).size.height * 0.05),
-                Text.rich(
-                  TextSpan(children: [
-                    TextSpan(
-                      text: "Welcome ",
-                      style: TextStyle(
-                        fontSize: MediaQuery.of(context).size.width * 0.1,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                Center(
+                  child: Text.rich(
+                    TextSpan(children: [
+                      TextSpan(
+                        text: "Welcome ",
+                        style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width * 0.1,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
                       ),
-                    ),
-                    TextSpan(
-                      text: "Back",
-                      style: TextStyle(
-                        fontSize: MediaQuery.of(context).size.width * 0.1,
-                        fontWeight: FontWeight.bold,
+                      TextSpan(
+                        text: "Back",
+                        style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width * 0.1,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xff6EA9FF),
+                        ),
                       ),
-                    ),
-                  ]),
+                    ]),
+                  ),
                 ),
                 SizedBox(height: MediaQuery.of(context).size.height * 0.05),
                 Form(
@@ -69,8 +73,10 @@ class _LoginState extends State<Login> {
                         controller: emailController,
                         hint: "example@gmail.com",
                         validator: (value) {
-                          if(value.toString().isEmpty){
+                          if (value == null || value.isEmpty) {
                             return "Please Enter Email";
+                          } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                            return "Please enter a valid email";
                           }
                           return null;
                         },
@@ -79,12 +85,12 @@ class _LoginState extends State<Login> {
                         isBottomSpace: true,
                       ),
                       CustomField(
-                        prefixIcon: const Icon(Icons.password),
+                        prefixIcon: const Icon(Icons.lock),
                         controller: passwordController,
                         obscureText: true,
                         hint: "*******",
                         validator: (value) {
-                          if(value.toString().isEmpty){
+                          if (value == null || value.isEmpty) {
                             return "Please Enter Password";
                           }
                           return null;
@@ -96,43 +102,53 @@ class _LoginState extends State<Login> {
                     ],
                   ),
                 ),
-                CustomBtn(
+                const SizedBox(height: 20),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : CustomBtn(
                     name: "Sign In",
                     borderColor: const Color(0xffeceef1),
-                    onTap: () {
-                      if(_loginKey.currentState!.validate()){
-                        FirebaseUpload().userLogin(email: emailController.text, password: passwordController.text,context: context);
+                    onTap: () async {
+                      if (_loginKey.currentState!.validate()) {
+                        setState(() {
+                          _isLoading = true;
+                        });
+
+                        await FirebaseUpload().userLogin(
+                          email: emailController.text,
+                          password: passwordController.text,
+                          context: context,
+                        );
+
+                        setState(() {
+                          _isLoading = false;
+                        });
                       } else {
-                        showSnackBar(message: 'Please Fill up details!',context: context,isError: false);
+                        showSnackBar(
+                            message: 'Please fill up the details!',
+                            context: context,
+                            isError: false);
                       }
                     },
+                  ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0xff6EA9FF),
-                          blurRadius: 8,
-                          offset: Offset(2, 2),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const Register(),));
-                      },
-                      icon: const Center(
-                        child: Text(
-                          "Don't have account? Sign Up",
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const Register()),
+                    );
+                  },
+                  child: const Center(
+                    child: Text(
+                      "Don't have an account? Sign Up",
+                      style: TextStyle(
+                        color: Color(0xff6EA9FF),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
                   ),

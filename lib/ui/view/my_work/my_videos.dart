@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
@@ -36,6 +35,7 @@ class _MyVideosWorkState extends State<MyVideosWork> {
           },
           child: Column(
             children: [
+              const SizedBox(height: 10),
               Expanded(
                 child: FutureBuilder(
                   future: _dataFutureVideos,
@@ -49,54 +49,57 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                         itemCount: upload.lenVideos,
                         padding: const EdgeInsets.all(8),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          childAspectRatio: 1,
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.75,
                         ),
                         itemBuilder: (context, index) {
                           return FutureBuilder<String?>(
                             future: VideoThumbnail.thumbnailFile(
                               video: upload.videoURLs[index],
                               imageFormat: ImageFormat.JPEG,
-                              maxHeight: 150,
+                              maxHeight: 200,
                               quality: 100,
                             ),
                             builder: (context, snapshot) {
                               if (snapshot.hasError) {
-                                return const Icon(Icons.error);
+                                return const Icon(Icons.error, color: Colors.red);
                               } else if (snapshot.hasData) {
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: Colors.black),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        color: Colors.white,
-                                        blurRadius: 8,
-                                        offset: Offset(2, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: InkWell(
-                                    onTap: () async {
-                                      File file = await CachedFileHelper.urlToFile(upload.videoURLs[index]);
-                                      Get.to(VideoResultPopup(video: file, title: false));
-                                    },
+                                return GestureDetector(
+                                  onTap: () async {
+                                    File file = await CachedFileHelper.urlToFile(upload.videoURLs[index]);
+                                    Get.to(VideoResultPopup(video: file, title: false));
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.black12, width: 1),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 8,
+                                          offset: const Offset(2, 2),
+                                        ),
+                                      ],
+                                    ),
                                     child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(12),
                                       child: Image.file(
                                         File(snapshot.data!),
-                                        height: 100,
-                                        width: 100,
                                         fit: BoxFit.cover,
                                       ),
                                     ),
                                   ),
                                 );
                               } else {
-                                return const SizedBox.shrink();
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Center(child: CircularProgressIndicator()),
+                                );
                               }
                             },
                           );
@@ -131,6 +134,3 @@ class CachedFileHelper {
     return file;
   }
 }
-
-
-

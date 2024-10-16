@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:videoapp/ui/view/my_work/my_videos.dart';
-
-import '../../widget/common_snackbar.dart';
-import 'my_images.dart';
+import 'package:videoapp/ui/view/my_work/my_images.dart';
 
 class MyWorkTab extends StatefulWidget {
   final int index;
@@ -20,11 +18,16 @@ class _MyWorkTabState extends State<MyWorkTab>
 
   @override
   void initState() {
-    tabController = TabController(length: 2,vsync: this,animationDuration: const Duration(seconds: 1),initialIndex: widget.index);
-    tabController!.addListener(() {
-      setState(() {});
-    });
     super.initState();
+    tabController = TabController(
+      length: 2,
+      vsync: this,
+      animationDuration: const Duration(milliseconds: 300), // Smooth transition
+      initialIndex: widget.index,
+    );
+    tabController!.addListener(() {
+      setState(() {}); // Update UI on tab switch
+    });
   }
 
   @override
@@ -36,39 +39,43 @@ class _MyWorkTabState extends State<MyWorkTab>
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
         leading: IconButton(
-          onPressed: () {
-            Get.back();
-          },
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.white,
-          ),
+          onPressed: () => Get.back(),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
         title: Text(
-          "My Work".tr,
+          "My Work",
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
       body: Column(
         children: [
-          ColoredTabBar(
-            colors: Colors.white,
-            tabBar: TabBar(
+          // Custom TabBar with design improvements
+          Container(
+            color: Colors.white,
+            child: TabBar(
               controller: tabController,
-              automaticIndicatorColorAdjustment: true,
+              indicatorColor: const Color(0xff6EA9FF), // Match app's theme
+              indicatorWeight: 4, // Thicker underline for active tab
+              labelColor: Colors.black, // Active tab text color
+              unselectedLabelColor: Colors.grey, // Inactive tab text color
+              labelStyle: const TextStyle(fontWeight: FontWeight.bold),
               tabs: const [
-                Tab(child: Text("Images", style: TextStyle(color: Colors.black)),),
-                Tab(child: Text("Videos", style: TextStyle(color: Colors.black)),),
+                Tab(text: "Images"),
+                Tab(text: "Videos"),
               ],
             ),
           ),
+          // Smooth tab content transition
           Expanded(
             child: TabBarView(
               controller: tabController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: const [MyImagesWork(), MyVideosWork()],
+              physics: const BouncingScrollPhysics(), // Smooth scrolling effect
+              children: const [
+                MyImagesWork(),
+                MyVideosWork(),
+              ],
             ),
-          )
+          ),
         ],
       ),
     );

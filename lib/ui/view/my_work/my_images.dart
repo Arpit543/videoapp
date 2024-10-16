@@ -23,70 +23,75 @@ class _MyImagesWorkState extends State<MyImagesWork> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
             await upload.getImageData();
-            setState(() {});
+            setState(() {
+              _dataFutureImages = upload.getImageData();
+            });
           },
-          child: Column(
-            children: [
-              Expanded(
-                child: FutureBuilder(
-                  future: _dataFutureImages,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    } else {
-                      return GridView.builder(
-                        itemCount: upload.lenImages,
-                        padding: const EdgeInsets.all(8),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          childAspectRatio: 1,
-                        ),
-                        itemBuilder: (context, index) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.black),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.white,
-                                  blurRadius: 8,
-                                  offset: Offset(2, 2),
-                                ),
-                              ],
-                            ),
-                            child: InkWell(
-                              onTap: () {
-                                Get.to(FullScreenImageViewer( imageUrl: upload.imageURLs[index],));
-                              },
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.network(
-                                  upload.imageURLs[index],
-                                  fit: BoxFit.fill,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(Icons.error);
-                                  },
-                                ),
-                              ),
-                            ),
-                          );
+          child: FutureBuilder(
+            future: _dataFutureImages,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (upload.imageURLs.isEmpty) {
+                return const Center(child: Text('No images found.'));
+              } else {
+                return GridView.builder(
+                  padding: const EdgeInsets.all(10),
+                  itemCount: upload.lenImages,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3, // Reduced column count for better view
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1,
+                  ),
+                  itemBuilder: (context, index) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200], // Soft grey background
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.grey),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 8,
+                            offset: Offset(2, 2),
+                          ),
+                        ],
+                      ),
+                      child: InkWell(
+                        onTap: () {
+                          Get.to(FullScreenImageViewer(
+                            imageUrl: upload.imageURLs[index],
+                          ));
                         },
-                      );
-                    }
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.network(
+                            upload.imageURLs[index],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Center(
+                                child: Icon(
+                                  Icons.error,
+                                  color: Colors.red,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    );
                   },
-                ),
-              ),
-            ],
+                );
+              }
+            },
           ),
         ),
       ),
@@ -112,9 +117,10 @@ class FullScreenImageViewer extends StatelessWidget {
         child: PhotoView(
           filterQuality: FilterQuality.high,
           enableRotation: true,
-          strictScale: true,
+          backgroundDecoration: const BoxDecoration(
+            color: Colors.white,
+          ),
           imageProvider: NetworkImage(imageUrl),
-          backgroundDecoration: const BoxDecoration(color: Colors.white),
         ),
       ),
     );

@@ -23,6 +23,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
   bool isLoading = false;
   Map<String, dynamic> data = {};
   final AudioPlayer _player = AudioPlayer();
+  String? audioPath;
 
   @override
   void initState() {
@@ -37,20 +38,40 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
     });
 
     final Directory appDir = await getApplicationDocumentsDirectory();
-    final String audioPath = '${appDir.path}/temp_audio.mp3';
+    audioPath = '${appDir.path}/temp_audio.mp3';
 
     final http.Response response = await http.get(Uri.parse(data['url']));
     if (response.statusCode == 200) {
-      final File audioFile = File(audioPath);
+      final File audioFile = File(audioPath!);
       await audioFile.writeAsBytes(response.bodyBytes);
 
       await _trimmer.loadAudio(audioFile: audioFile);
 
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     } else {
       throw Exception('Failed to download audio');
+    }
+  }
+
+  Future<void> _playPauseAudio() async {
+    if (_isPlaying) {
+      await _player.pause();
+      setState(() => _isPlaying = false);
+    } else {
+      await _player.setFilePath(audioPath!);
+      await _player.seek(Duration(seconds: _startValue.toInt())); // Use _startValue
+      await _player.play();
+      _player.positionStream.listen((position) {
+        if (position.inSeconds >= _endValue) {
+          _player.pause();
+          setState(() => _isPlaying = false);
+        }
+      });
+      setState(() => _isPlaying = true);
     }
   }
 
@@ -62,11 +83,14 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
     await _trimmer.saveTrimmedAudio(
       startValue: _startValue,
       endValue: _endValue,
-      audioFileName: 'trimmed_audio_${DateTime.now().millisecondsSinceEpoch}.mp3',
+      audioFileName:
+      'trimmed_audio_${DateTime.now().millisecondsSinceEpoch}.mp3',
       onSave: (outputPath) {
-        setState(() {
-          _progressVisibility = false;
-        });
+        if (mounted) {
+          setState(() {
+            _progressVisibility = false;
+          });
+        }
         debugPrint('OUTPUT PATH: $outputPath');
       },
     );
@@ -87,17 +111,23 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [
-          isLoading ? const SizedBox.shrink() :
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade50),
+          isLoading
+              ? const SizedBox.shrink()
+              : ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal.shade50,
+            ),
             onPressed: _progressVisibility ? null : () => _saveAudio(),
-            child: const Text("SAVE", style: TextStyle(color: Colors.lightBlueAccent)),
+            child: const Text(
+              "SAVE",
+              style: TextStyle(color: Colors.lightBlueAccent),
+            ),
           ),
         ],
       ),
-      body: isLoading ?
-      const Center(child: CircularProgressIndicator()) :
-      SingleChildScrollView(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Center(
           child: Container(
@@ -115,11 +145,20 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
                           boxShadow: const [
-                            BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(2, 2)),
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 8,
+                              offset: Offset(2, 2),
+                            ),
                           ],
                         ),
                         child: Center(
-                          child: Image.network(data['artwork'], height: 150, width: 150, filterQuality: FilterQuality.high),
+                          child: Image.network(
+                            data['artwork'],
+                            height: 150,
+                            width: 150,
+                            filterQuality: FilterQuality.high,
+                          ),
                         ),
                       ),
                       Padding(
@@ -139,7 +178,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                   viewerWidth: MediaQuery.of(context).size.width,
                   durationStyle: DurationStyle.FORMAT_MM_SS,
                   backgroundColor: Colors.teal,
-                  maxAudioLength:  const Duration(seconds: 30),
+                  maxAudioLength: const Duration(seconds: 30),
                   barColor: Colors.white,
                   showDuration: true,
                   durationTextStyle: const TextStyle(color: Colors.black),
@@ -158,25 +197,31 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                   ),
                   areaProperties: TrimAreaProperties.fixed(),
                   onChangeStart: (value) {
-                    _startValue = value;
+                    _startValue = value; // Update start value
+                    debugPrint('Start Value: $_startValue');
                   },
                   onChangeEnd: (value) {
-                    _endValue = value;
+                    _endValue = value; // Update end value
+                    debugPrint('End Value: $_endValue');
                   },
                   onChangePlaybackState: (value) {
                     setState(() => _isPlaying = value);
                   },
                 ),
                 TextButton(
-                  child: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, size: 80.0, color: Colors.teal),
-                  onPressed: () async {
-                    bool playbackState = await _trimmer.audioPlaybackControl(startValue: _startValue, endValue: _endValue);
-                    setState(() => _isPlaying = playbackState);
-                  },
+                  onPressed: _playPauseAudio,
+                  child: Icon(
+                    _isPlaying ? Icons.pause : Icons.play_arrow,
+                    size: 80.0,
+                    color: Colors.teal,
+                  ),
                 ),
                 Visibility(
                   visible: _progressVisibility,
-                  child: LinearProgressIndicator(backgroundColor: Theme.of(context).primaryColor.withOpacity(0.5)),
+                  child: LinearProgressIndicator(
+                    backgroundColor:
+                    Theme.of(context).primaryColor.withOpacity(0.5),
+                  ),
                 ),
               ],
             ),

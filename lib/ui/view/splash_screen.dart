@@ -17,8 +17,8 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
-    _requestPermissions();
     super.initState();
+    _requestPermissions();
   }
 
   Future<void> _requestPermissions() async {
@@ -26,32 +26,38 @@ class _SplashScreenState extends State<SplashScreen> {
     final storageStatus = await Permission.storage.request();
 
     if (cameraStatus.isDenied || storageStatus.isDenied) {
-      if (cameraStatus.isDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Camera permission is required for this app. Please enable it from app settings.'),
-            action: SnackBarAction(label: 'Settings',onPressed: () => openAppSettings(),),
-          ),
-        );
-      }
-
-      if (storageStatus.isDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Storage permission is required for this app. Please enable it from app settings.'),
-            action: SnackBarAction(label: 'Settings',onPressed: () => openAppSettings(),),
-          ),
-        );
-      }
-    } else if (cameraStatus.isGranted && storageStatus.isGranted) {
-      Future.delayed(const Duration(seconds: 5), () async {
-        if (Constants.getBool(Constants.isLogin) == true) {
-          Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const TabScreen()), (route) => false);
-        } else {
-          Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const Login()), (route) => false);
-        }
+      _showPermissionSnackBar(cameraStatus, storageStatus);
+    } else {
+      Future.delayed(const Duration(seconds: 2), () {
+        _navigateToNextScreen();
       });
     }
+  }
+
+  void _showPermissionSnackBar(PermissionStatus cameraStatus, PermissionStatus storageStatus) {
+    String message = 'Permissions required: ';
+    if (cameraStatus.isDenied) {
+      message += 'Camera ';
+    }
+    if (storageStatus.isDenied) {
+      message += 'Storage ';
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$message permission is required. Please enable it in settings.'),
+        action: SnackBarAction(
+          label: 'Settings',
+          onPressed: () => openAppSettings(),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToNextScreen() {
+    final isLoggedIn = Constants.getBool(Constants.isLogin) == true;
+
+    Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => isLoggedIn ? const TabScreen() : const Login(),),(route) => false,);
   }
 
   @override
@@ -61,10 +67,16 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Padding(
           padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.2),
           child: ClipOval(
-            child: Lottie.asset(
-              "assets/anim/anim_1.json",
-              width: 100,
-              height: 100,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Lottie.asset(
+                  "assets/anim/anim_1.json",
+                  width: 200,
+                  height: 200,
+                  fit: BoxFit.cover,
+                ),
+              ],
             ),
           ),
         ),

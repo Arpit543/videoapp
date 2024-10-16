@@ -1,14 +1,17 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:video_editor/video_editor.dart';
 import 'package:video_player/video_player.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
+import 'package:videoapp/ui/view/image_editor/image_editor.dart';
+import 'package:videoapp/ui/view/video_edit/video_editor.dart';
 
 class FileView extends StatefulWidget {
   final List<StoryTypeModel> storyItems;
 
-  FileView({super.key, required this.storyItems});
+  const FileView({super.key, required this.storyItems});
 
   @override
   State<FileView> createState() => _FileViewState();
@@ -16,7 +19,8 @@ class FileView extends StatefulWidget {
 
 class _FileViewState extends State<FileView> {
   PageController pageController = PageController();
-  VideoPlayerController? _controller; // Make it nullable
+  VideoPlayerController? _controller;
+  bool isLoadingVideo = true;
 
   @override
   void initState() {
@@ -29,14 +33,21 @@ class _FileViewState extends State<FileView> {
       await _controller!.dispose();
     }
 
-    final File videoFile = File(widget.storyItems[index].story);
-    _controller = VideoPlayerController.file(videoFile);
+    if (widget.storyItems[index].type == StoryType.Video) {
+      setState(() {
+        isLoadingVideo = true;
+      });
 
-    await _controller!.initialize();
-    setState(() {
-      _controller!.play();
-      _controller!.setLooping(true);
-    });
+      final File videoFile = File(widget.storyItems[index].story);
+      _controller = VideoPlayerController.file(videoFile);
+
+      await _controller!.initialize();
+      setState(() {
+        isLoadingVideo = false;
+        _controller!.play();
+        _controller!.setLooping(true);
+      });
+    }
   }
 
   @override
@@ -67,7 +78,14 @@ class _FileViewState extends State<FileView> {
                 controller: pageController,
                 itemCount: widget.storyItems.length,
                 onPageChanged: (index) {
-                  _initializeVideoController(index);
+                  if (widget.storyItems[index].type == StoryType.Video) {
+                    _initializeVideoController(index);
+                  } else {
+                    setState(() {
+                      _controller?.dispose();
+                      _controller = null;
+                    });
+                  }
                 },
                 itemBuilder: (context, index) {
                   return Padding(
@@ -78,6 +96,19 @@ class _FileViewState extends State<FileView> {
                     ),
                   );
                 },
+              ),
+            ),
+            // Smooth Page Indicator
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: SmoothPageIndicator(
+                controller: pageController,
+                count: widget.storyItems.length,
+                effect: const ExpandingDotsEffect(
+                  activeDotColor: Color(0xff6EA9FF),
+                  dotHeight: 10,
+                  dotWidth: 10,
+                ),
               ),
             ),
             Container(
@@ -114,12 +145,15 @@ class _FileViewState extends State<FileView> {
                   Expanded(
                     flex: 1,
                     child: IconButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        _handleEdit(widget.storyItems);
+                      },
                       icon: Center(
                         child: Text(
                           "Edit",
                           style: TextStyle(
-                            color: const CropGridStyle().selectedBoundariesColor,
+                            color:
+                                const CropGridStyle().selectedBoundariesColor,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -135,16 +169,55 @@ class _FileViewState extends State<FileView> {
     );
   }
 
+  void _handleEdit(List<StoryTypeModel> storyItems) {
+    for (var item in storyItems) {
+      print("URLS : $item");
+      if (item.story.contains('.jpg') || item.story.contains('.png') || item.story.contains('.jpeg')) {
+        // Navigate to Image Editor
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ImageEditor(file: File(item.story)), // Replace with your Image Editor Screen
+          ),
+        );
+        break; // Exit the loop after navigating
+      } else if (item.story.contains('.mp4') || item.story.contains('.mov') || item.story.contains('.avi') || item.story.contains('.mp3') || item.story.contains('.mkv')) {
+        // Navigate to Video Editor
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoEditor(file: File(item.story)), // Replace with your Video Editor Screen
+          ),
+        );
+        break; // Exit the loop after navigating
+      } else {
+        // Handle unsupported file types
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unsupported file type for editing: $item.contains()'),
+          ),
+        );
+        break; // Exit after showing the message
+      }
+    }
+  }
+
   Widget customStoryView({required StoryTypeModel story}) {
-    final File videoFile = File(story.story);
+    final File mediaFile = File(story.story);
     switch (story.type) {
       case StoryType.Image:
-        return Image.file(videoFile, fit: BoxFit.fill);
+        return Image.file(
+          mediaFile,
+          fit: BoxFit.cover,
+          width: MediaQuery.of(context).size.width,
+        );
       case StoryType.Video:
         if (_controller != null && _controller!.value.isInitialized) {
-          return VideoPlayer(_controller!);
+          return isLoadingVideo
+              ? const Center(child: CircularProgressIndicator())
+              : VideoPlayer(_controller!);
         } else {
-          return Center(child: CircularProgressIndicator()); // Show loading while initializing
+          return const Center(child: CircularProgressIndicator());
         }
       default:
         return Text(story.story);

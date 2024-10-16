@@ -20,6 +20,8 @@ class _RegisterState extends State<Register> {
   final cPasswordController = TextEditingController();
 
   FirebaseUpload upload = FirebaseUpload();
+  bool _isLoading = false; // Added loading state
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,12 +31,15 @@ class _RegisterState extends State<Register> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
-        title: const Text("Sign Up",style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
+        title: const Text(
+          "Sign Up",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(20),
             child: Column(
               children: [
                 SizedBox(height: MediaQuery.of(context).size.height * 0.05),
@@ -45,9 +50,9 @@ class _RegisterState extends State<Register> {
                       CustomField(
                         prefixIcon: const Icon(Icons.person),
                         controller: nameController,
-                        hint: "John Due",
+                        hint: "John Doe",
                         validator: (value) {
-                          if(value.toString().isEmpty){
+                          if (value == null || value.isEmpty) {
                             return "Please Enter Name";
                           }
                           return null;
@@ -61,8 +66,10 @@ class _RegisterState extends State<Register> {
                         controller: emailController,
                         hint: "example@gmail.com",
                         validator: (value) {
-                          if(value.toString().isEmpty){
+                          if (value == null || value.isEmpty) {
                             return "Please Enter Email";
+                          } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                            return "Please enter a valid email";
                           }
                           return null;
                         },
@@ -71,13 +78,15 @@ class _RegisterState extends State<Register> {
                         isBottomSpace: true,
                       ),
                       CustomField(
-                        prefixIcon: const Icon(Icons.password),
+                        prefixIcon: const Icon(Icons.lock),
                         controller: passwordController,
                         obscureText: true,
                         hint: "*******",
                         validator: (value) {
-                          if(value.toString().isEmpty){
+                          if (value == null || value.isEmpty) {
                             return "Please Enter Password";
+                          } else if (value.length < 6) {
+                            return "Password should be at least 6 characters";
                           }
                           return null;
                         },
@@ -86,15 +95,15 @@ class _RegisterState extends State<Register> {
                         keyboardType: TextInputType.visiblePassword,
                       ),
                       CustomField(
-                        prefixIcon: const Icon(Icons.password),
+                        prefixIcon: const Icon(Icons.lock),
                         controller: cPasswordController,
                         obscureText: true,
                         hint: "*******",
                         validator: (value) {
-                          if(value.toString().isEmpty){
+                          if (value == null || value.isEmpty) {
                             return "Please Enter Confirm Password";
-                          } else if (value != passwordController.text){
-                            return "Password Not Matched";
+                          } else if (value != passwordController.text) {
+                            return "Password does not match";
                           }
                           return null;
                         },
@@ -105,44 +114,58 @@ class _RegisterState extends State<Register> {
                     ],
                   ),
                 ),
-                CustomBtn(
-                  name: "Sign Up",
-                  borderColor: const Color(0xffeceef1),
-                  onTap: () {
-                    if(_loginKey.currentState!.validate()){
-                    print("Sign up call");
-                      upload.registerUser(name: nameController.text, email: emailController.text, password: passwordController.text,cPassword: cPasswordController.text, context: context);
-                    } else {
-                      showSnackBar(message: 'Please Fill up details!',context: context,isError: false);
-                    }
-                  },
+                const SizedBox(height: 20),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _isLoading
+                      ? const CircularProgressIndicator()
+                      : CustomBtn(
+                    name: "Sign Up",
+                    borderColor: const Color(0xffeceef1),
+                    onTap: () {
+                      if (_loginKey.currentState!.validate()) {
+                        setState(() {
+                          _isLoading = true;
+                        });
+                        upload.registerUser(
+                          name: nameController.text,
+                          email: emailController.text,
+                          password: passwordController.text,
+                          cPassword: cPasswordController.text,
+                          context: context,
+                        ).then((_) {
+                          setState(() {
+                            _isLoading = false;
+                          });
+                        });
+                      } else {
+                        showSnackBar(
+                          message: 'Please fill up all the details!',
+                          context: context,
+                          isError: true,
+                        );
+                      }
+                    },
+                  ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0xff6EA9FF),
-                          blurRadius: 8,
-                          offset: Offset(2, 2),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      onPressed: () {
-                        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const Login(),), (route) => false);
-                      },
-                      icon: const Center(
-                        child: Text(
-                          "Have an account? Sign In",
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const Login(),
+                      ),
+                          (route) => false,
+                    );
+                  },
+                  child: const Center(
+                    child: Text(
+                      "Have an account? Sign In",
+                      style: TextStyle(
+                        color: Color(0xff6EA9FF),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
                   ),

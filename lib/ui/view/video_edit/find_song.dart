@@ -27,6 +27,11 @@ class _FindSongState extends State<FindSong> {
   }
 
   @override
+  void initState() {
+    fetchSongs();
+    super.initState();
+  }
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -39,14 +44,15 @@ class _FindSongState extends State<FindSong> {
             textAlign: TextAlign.start,
             keyboardType: TextInputType.text,
             decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search, color: Colors.grey),
               hintText: "Search",
-              contentPadding: const EdgeInsets.all(8),
-              errorBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Colors.grey),
               ),
+              filled: true,
+              fillColor: Colors.grey[200],
             ),
             autofillHints: const [AutofillHints.name],
             validator: (value) {
@@ -56,10 +62,11 @@ class _FindSongState extends State<FindSong> {
         ),
         actions: [
           IconButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              icon: const Icon(Icons.close))
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            icon: const Icon(Icons.close, color: Colors.black),
+          )
         ],
       ),
       body: SafeArea(
@@ -90,17 +97,17 @@ class _FindSongState extends State<FindSong> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.black),
+                        border: Border.all(color: Colors.black.withOpacity(0.2)),
                         boxShadow: const [
                           BoxShadow(
-                            color: Colors.white,
-                            blurRadius: 8,
-                            offset: Offset(2, 2),
+                            color: Colors.black12,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
                           ),
                         ],
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(5),
+                        padding: const EdgeInsets.all(10),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [

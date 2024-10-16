@@ -20,6 +20,7 @@ class ImageEditor extends StatefulWidget {
 
 class _ImageEditorState extends State<ImageEditor> {
   FirebaseUpload upload = FirebaseUpload();
+  bool _isUploading = false;
 
   Future<File> _convertBytesToFile(Uint8List imageBytes) async {
     final tempDir = await getTemporaryDirectory();
@@ -42,20 +43,48 @@ class _ImageEditorState extends State<ImageEditor> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
-      body: Container(
-        color: Colors.white,
-        child: ProImageEditor.file(
-          widget.file,
-          configs: const ProImageEditorConfigs(),
-          callbacks: ProImageEditorCallbacks(
-            onImageEditingComplete: (Uint8List bytes) async {
-              File editedImageFile = await _convertBytesToFile(bytes);
-              await upload.uploadFileInStorage(file: editedImageFile, type: "Images", context: context,);
-              Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const HomeScreen(),),(route) => false,
-              );
-            },
+      body: Stack(
+        children: [
+          Container(
+            color: Colors.white,
+            child: ProImageEditor.file(
+              widget.file,
+              configs: const ProImageEditorConfigs(),
+              callbacks: ProImageEditorCallbacks(
+                onImageEditingComplete: (Uint8List bytes) async {
+                  setState(() {
+                    _isUploading = true;
+                  });
+                  File editedImageFile = await _convertBytesToFile(bytes);
+                  await upload.uploadFileInStorage(
+                    file: editedImageFile,
+                    type: "Images",
+                    context: context,
+                  );
+                  setState(() {
+                    _isUploading = false;
+                  });
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HomeScreen(),
+                    ),
+                        (route) => false,
+                  );
+                },
+              ),
+            ),
           ),
-        ),
+          if (_isUploading)
+            Center(
+              child: Container(
+                color: Colors.white.withOpacity(0.8),
+                child: const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xff6EA9FF)),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
