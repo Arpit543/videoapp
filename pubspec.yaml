@@ -51,13 +51,11 @@ dependencies:
   shared_preferences: ^2.3.2
   http: ^1.2.2
   video_player: ^2.9.2
-  path: ^1.9.0
   platform: ^3.1.5
   just_audio: ^0.9.41
   permission_handler: ^11.3.1
   easy_audio_trimmer: ^1.0.2+4
-  ffmpeg_kit_flutter_full: ^6.0.3
-
+  ffmpeg_kit_flutter: ^6.0.3
 
 dev_dependencies:
   flutter_test:

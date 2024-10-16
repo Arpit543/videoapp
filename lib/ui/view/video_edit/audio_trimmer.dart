@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:easy_audio_trimmer/easy_audio_trimmer.dart' as trim;
+import 'package:easy_audio_trimmer/easy_audio_trimmer.dart';
 import 'package:flutter/material.dart';
 
 class AudioTrimmerView extends StatefulWidget {
@@ -13,7 +13,7 @@ class AudioTrimmerView extends StatefulWidget {
 }
 
 class _AudioTrimmerViewState extends State<AudioTrimmerView> {
-  late trim.Trimmer _trimmer;
+  late Trimmer _trimmer;
 
   double _startValue = 0.0;
   double _endValue = 0.0;
@@ -24,9 +24,9 @@ class _AudioTrimmerViewState extends State<AudioTrimmerView> {
 
   @override
   void initState() {
-    _trimmer = trim.Trimmer();
-    super.initState();
+    _trimmer = Trimmer();
     _loadAudio();
+    super.initState();
   }
 
   void _loadAudio() async {
@@ -71,7 +71,14 @@ class _AudioTrimmerViewState extends State<AudioTrimmerView> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Audio Trimmer"),
+        backgroundColor: const Color(0xff6EA9FF),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
+        title: const Text(
+          "Audio Editor",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
       body: Center(
               child: Container(
@@ -96,25 +103,21 @@ class _AudioTrimmerViewState extends State<AudioTrimmerView> {
                       child: Center(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: trim.TrimViewer(
+                          child: TrimViewer(
                             trimmer: _trimmer,
                             viewerHeight: 100,
                             maxAudioLength: const Duration(seconds: 50),
                             viewerWidth: MediaQuery.of(context).size.width,
-                            durationStyle: trim.DurationStyle.FORMAT_MM_SS,
+                            durationStyle: DurationStyle.FORMAT_MM_SS,
                             backgroundColor: Theme.of(context).primaryColor,
                             barColor: Colors.white,
                             durationTextStyle: TextStyle(color: Theme.of(context).primaryColor),
                             allowAudioSelection: true,
-                            editorProperties: trim.TrimEditorProperties(circleSize: 10,borderPaintColor: Colors.yellowAccent,borderWidth: 4,borderRadius: 5,circlePaintColor: Colors.yellow.shade400),
-                            areaProperties: trim.TrimAreaProperties.edgeBlur(blurEdges: true),
+                            editorProperties: TrimEditorProperties(circleSize: 10,borderPaintColor: Colors.yellowAccent,borderWidth: 4,borderRadius: 5,circlePaintColor: Colors.yellow.shade400),
+                            areaProperties: TrimAreaProperties.edgeBlur(blurEdges: true),
                             onChangeStart: (value) => _startValue = value,
                             onChangeEnd: (value) => _endValue = value,
-                            onChangePlaybackState: (value) {
-                              if (mounted) {
-                                setState(() => _isPlaying = value);
-                              }
-                            },
+                            onChangePlaybackState: (value) => _isPlaying = value,
                           ),
                         ),
                       ),

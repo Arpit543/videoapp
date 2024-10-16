@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_full/return_code.dart';
+import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -476,16 +476,20 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                 padding: const EdgeInsets.all(8.0),
                 child: InkWell(
                   onTap: () async {
-                   /* String videoPath = widget.file.path;
+                    String videoPath = widget.file.path;
                     String audioUrl = song.url;
 
-                    print("Audio $audioUrl");
+                    /*print("Audio $audioUrl");
                     mergeAudioAndVideo(videoPath, audioUrl).then((outputPath) {
                       print('Merged video saved at $outputPath');
                     }).catchError((error) {
                       print('Error: $error');
                     });*/
-                    downloadAndTrimAudio(song.url, context);
+
+                    print("Call");
+                    downloadAndTrimAudio(audioUrl, context);
+                    print("Called");
+                    //Navigator.pop(context);
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -573,23 +577,26 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
 
 
   Future<void> downloadAndTrimAudio(String url, BuildContext context) async {
+    try {
+      final Directory appDir = await getApplicationDocumentsDirectory();
+      final String audioPath = '${appDir.path}/temp_audio.mp3';
 
-    final Directory appDir = await getApplicationDocumentsDirectory();
-    final String audioPath = '${appDir.path}/temp_audio.mp3';
+      final http.Response response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final File audioFile = File(audioPath);
+        await audioFile.writeAsBytes(response.bodyBytes);
+        print("Audio File saved at: $audioPath");
 
-    final http.Response response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final File audioFile = File(audioPath);
-      await audioFile.writeAsBytes(response.bodyBytes);
-      Navigator.push(context,MaterialPageRoute(builder: (context) => AudioTrimmerView(file: audioFile)),);
-
-      print("Audio File saved at: $audioPath");
-    } else {
-      throw Exception('Failed to download audio');
+        Navigator.push(context, MaterialPageRoute(builder: (context) => AudioTrimmerView(file: audioFile),));
+      } else {
+        throw Exception('Failed to download audio');
+      }
+    } catch(e) {
+      print("Error : ${e.toString()}");
     }
   }
 
-  ///Create Covers From Video
+  ///Create Covers From Video [_coverSelection]
   Widget _coverSelection() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
