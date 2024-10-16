@@ -8,6 +8,7 @@ import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/image_editor/image_editor.dart';
 import 'package:videoapp/ui/view/my_work/tab_vew.dart';
 import 'package:videoapp/ui/view/splash_screen.dart';
+import 'package:videoapp/ui/view/story_view.dart';
 import 'package:videoapp/ui/view/video_edit/video_editor.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -24,6 +25,8 @@ class _HomeScreenState extends State<HomeScreen> {
   File? cameraFile;
 
   String name = "User";
+
+  List<String> storyItems = [];
 
   @override
   void initState() {
@@ -71,25 +74,40 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: const Color(0xff6EA9FF),
         elevation: 0,
         centerTitle: true,
+        leading:  InkWell(
+          onTap: () async {
+            try {
+              final pickedFile = await _picker.pickMultipleMedia();
+              for (var element in pickedFile) {
+                storyItems.add(element.path);
+              }
+              setState(() {});
+              upload.uploadListInStorage(images: storyItems, type: "Story", context: context);
+              // Navigator.push(context,MaterialPageRoute(builder: (context) => StoryViewScreen(storyItems: storyItems,)));
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error picking video: $e')));
+            }
+          },
+          child: const Padding(
+            padding: EdgeInsets.all(10.0),
+            child: Icon(Icons.add_box_outlined, color: Colors.white,),
+          ),
+        ),
         title: Text(
           'Hey $name',
-          style:
-              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
           InkWell(
-              onTap: () {
-                Constants.clear();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SplashScreen()),
-                  (route) => false,
-                );
-              },
-              child: const Padding(
-                padding: EdgeInsets.all(10.0),
-                child: Icon(Icons.power_settings_new, color: Colors.white,),
-              ))
+            onTap: () {
+              Constants.clear();
+              Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const SplashScreen()),(route) => false,);
+            },
+            child: const Padding(
+              padding: EdgeInsets.all(10.0),
+              child: Icon(Icons.power_settings_new, color: Colors.white,),
+            ),
+          )
         ],
       ),
       body: SafeArea(
@@ -97,6 +115,14 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(10.0),
           child: Column(
             children: [
+              Row(
+                children: [
+                 ClipOval(
+                   child: InkWell(onTap: () => Get.to(StoryViewScreen(storyItems: storyItems,)), child: Image.network("https://picsum.photos/250", width: 60, height: 60,)),
+                 )
+                ],
+              ),
+              const Divider(height: 10, color: Color(0xff6EA9FF)),
               Expanded(
                 child: GridView.count(
                   crossAxisCount: 2,
@@ -122,10 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     _gridItem(
                       label: "My Work",
-                      onTap: () {
-                        Future.delayed(const Duration(milliseconds: 200),
-                            () => Get.to(const MyWorkTab(index: 0)));
-                      },
+                      onTap: () => Future.delayed(const Duration(milliseconds: 200),() => Get.to(const MyWorkTab(index: 0))),
                     ),
                   ],
                 ),

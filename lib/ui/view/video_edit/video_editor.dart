@@ -13,9 +13,11 @@ import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/core/model/song_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:videoapp/ui/view/video_edit/audio_trimmer.dart';
+import 'package:videoapp/ui/widget/common_snackbar.dart';
 import 'crop_page.dart';
 import 'export_result.dart';
 import 'export_services.dart';
+import 'find_song.dart';
 
 class VideoEditor extends StatefulWidget {
   final File file;
@@ -185,9 +187,6 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     ExportService.dispose();
   }
 
-  ///   Show Error SnackBar
-  void _showErrorSnackBar(String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message),duration: const Duration(seconds: 1),),);
-
   ///   Export Video [_exportVideo]
   void _exportVideo() async {
     _isExporting.value = true;
@@ -200,7 +199,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
       onProgress: (stats) {
         _exportingProgress.value = config.getFFmpegProgress(stats.getTime().round());
       },
-      onError: (e, s) => _showErrorSnackBar("Error on export video :("),
+      onError: (e, s) => showSnackBar(context: context, message: "Error on Export video"),
       onCompleted: (exportedFile) async {
         _isExporting.value = false;
         Get.to(VideoResultPopup(video: exportedFile,title: true,));
@@ -213,13 +212,13 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     final config = CoverFFmpegVideoEditorConfig(_controller);
     final execute = await config.getExecuteConfig();
     if (execute == null) {
-      _showErrorSnackBar("Error on cover exportation initialization.");
+      showSnackBar(context: context, message: ("Error on cover exportation initialization."));
       return;
     }
 
     await ExportService.runFFmpegCommand(
       execute,
-      onError: (e, s) => _showErrorSnackBar("Error on cover exportation :("),
+      onError: (e, s) => showSnackBar(context: context, message: "Error on Export cover"),
       onCompleted: (cover) {
         if (!mounted) return;
         showDialog(context: context,builder: (_) => CoverResultPopup(cover: cover),);
@@ -266,7 +265,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
             ),
             Expanded(
               child: IconButton(
-                onPressed: () => _showMusicBottomSheet(context),
+                onPressed: () => Get.to(const FindSong()),
                 icon: const Icon(Icons.music_note),
                 tooltip: 'Music',
               ),
@@ -478,17 +477,22 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                   onTap: () async {
                     String videoPath = widget.file.path;
                     String audioUrl = song.url;
-
+                    Map<String, dynamic> map = {
+                      "title": song.title,
+                      "artist": song.artist,
+                      "artwork": song.artwork,
+                      "url": song.url,
+                      "id": song.id
+                    };
+                    print(" Map:- $map");
                     /*print("Audio $audioUrl");
                     mergeAudioAndVideo(videoPath, audioUrl).then((outputPath) {
                       print('Merged video saved at $outputPath');
                     }).catchError((error) {
                       print('Error: $error');
                     });*/
-
-                    print("Call");
-                    downloadAndTrimAudio(audioUrl, context);
-                    print("Called");
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => AudioTrimmerViewDemo(song: map,),));
+                    // downloadAndTrimAudio(audioUrl, context);
                     //Navigator.pop(context);
                   },
                   child: Container(
@@ -575,24 +579,31 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     );
   }
 
-
   Future<void> downloadAndTrimAudio(String url, BuildContext context) async {
     try {
       final Directory appDir = await getApplicationDocumentsDirectory();
-      final String audioPath = '${appDir.path}/temp_audio.mp3';
+      final String audioPath = '${appDir.path}/_audio.mp3';
+
+      print("App directory: ${appDir.path}");
 
       final http.Response response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final File audioFile = File(audioPath);
-        await audioFile.writeAsBytes(response.bodyBytes);
-        print("Audio File saved at: $audioPath");
-
-        Navigator.push(context, MaterialPageRoute(builder: (context) => AudioTrimmerView(file: audioFile),));
+        await audioFile.writeAsBytes(response.bodyBytes).then((_) {
+          print("Audio File saved at: $audioPath");
+        /*  Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AudioTrimmerView(file: audioFile)),
+          );*/
+        }).catchError((error) {
+          print("File write error: ${error.toString()}");
+        });
       } else {
+        print("Failed to download audio: ${response.statusCode} - ${response.body}");
         throw Exception('Failed to download audio');
       }
-    } catch(e) {
-      print("Error : ${e.toString()}");
+    } catch (e) {
+      print("Error: ${e.toString()}");
     }
   }
 

@@ -24,7 +24,7 @@ class FirebaseUpload {
   int lenImages = 0;
   int lenVideos = 0;
 
-  ///   Upload Image n Video to Firebase
+  ///   Upload Image n Video to Firebase using [uploadFileInStorage]
   Future<void> uploadFileInStorage({required File file, required String type, required BuildContext context}) async {
     String fileName = file.path.split("/").last;
     Reference storageRef = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/$type/$fileName");
@@ -34,6 +34,35 @@ class FirebaseUpload {
       showSnackBar(message: 'File Uploaded successfully',context: context,isError: false);
     } catch (e) {
       showSnackBar(message: 'File Failed to Upload', context: context, isError: true);
+    }
+  }
+
+  Future<void> uploadListInStorage({required List<String> images,required String type,required BuildContext context,}) async {
+    final storage = FirebaseStorage.instance;
+    final auth = FirebaseAuth.instance;
+
+    for (String imagePath in images) {
+      try {
+        File file = File(imagePath);
+        String fileName = imagePath.split('/').last;
+        Reference storageRef = storage.ref().child("${auth.currentUser!.uid}/$type/$fileName");
+
+        UploadTask uploadTask = storageRef.putFile(file);
+
+        uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+          double progress = 100.0 * (snapshot.bytesTransferred / snapshot.totalBytes);
+          print('Upload of $fileName is $progress% complete.');
+        });
+
+        TaskSnapshot snapshot = await uploadTask;
+
+        String downloadUrl = await snapshot.ref.getDownloadURL();
+
+        showSnackBar(message: '$fileName uploaded successfully!', context: context, isError: false);
+      } catch (e) {
+        print(e); // Log error for debugging
+        showSnackBar(message: 'Failed to upload $imagePath', context: context, isError: true);
+      }
     }
   }
 
@@ -181,42 +210,6 @@ class FirebaseUpload {
       showSnackBar(message: 'An error occurred while logging in. Please try again.',context: context,isError: true);
     }
   }
-
-  ///   Reset Password Using Link
-/*  Future<void> resetPasswordAndNotify(String email,
-      BuildContext context) async {
-    try {
-      QuerySnapshot userSnapshot = await FirebaseFirestore.instance.collection('User').where('email', isEqualTo: email).limit(1).get();
-
-      if (userSnapshot.docs.isEmpty) {
-        showSnackBar(message: 'No user found for that Email',context: context,isError: true);
-        return;
-      }
-
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-
-      DocumentReference userDocRef = userSnapshot.docs.first.reference;
-
-      await userDocRef.update({
-        'passwordResetRequested': true,
-        'lastPasswordResetRequest': FieldValue.serverTimestamp(),
-      });
-
-      showSnackBar(message: 'Password reset email sent! Check your inbox.',context: context,isError: false);
-    } on FirebaseAuthException catch (e) {
-      String errorMessage;
-      if (e.code == 'invalid-email') {
-        errorMessage = "Invalid Email Provided by You";
-      } else if (e.code == 'user-not-found') {
-        errorMessage = "No User Found for that Email";
-      } else {
-        errorMessage = "An unknown error occurred";
-      }
-      showSnackBar(message: errorMessage, context: context, isError: true);
-    } catch (e) {
-      showSnackBar(message: 'An error occurred while processing your request. Please try again.',context: context,isError: false);
-    }
-  }*/
 
   ///   Logout Your Session
   Future<void> logout(BuildContext context) async {

@@ -1,53 +1,68 @@
 import 'dart:io';
-
 import 'package:easy_audio_trimmer/easy_audio_trimmer.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:just_audio/just_audio.dart';
+import 'package:path_provider/path_provider.dart';
 
-class AudioTrimmerView extends StatefulWidget {
-  final File file;
+class AudioTrimmerViewDemo extends StatefulWidget {
+  final Map<String, dynamic> song;
 
-  const AudioTrimmerView({required this.file, super.key});
+  const AudioTrimmerViewDemo({required this.song, super.key});
 
   @override
-  State<AudioTrimmerView> createState() => _AudioTrimmerViewState();
+  State<AudioTrimmerViewDemo> createState() => _AudioTrimmerViewDemoState();
 }
 
-class _AudioTrimmerViewState extends State<AudioTrimmerView> {
-  late Trimmer _trimmer;
-
+class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
+  final Trimmer _trimmer = Trimmer();
   double _startValue = 0.0;
-  double _endValue = 0.0;
-
+  double _endValue = 30.0;
   bool _isPlaying = false;
   bool _progressVisibility = false;
   bool isLoading = false;
+  Map<String, dynamic> data = {};
+  final AudioPlayer _player = AudioPlayer();
 
   @override
   void initState() {
-    _trimmer = Trimmer();
-    _loadAudio();
     super.initState();
+    data = widget.song;
+    _loadAudio();
   }
 
-  void _loadAudio() async {
+  Future<void> _loadAudio() async {
     setState(() {
       isLoading = true;
     });
-    await _trimmer.loadAudio(audioFile: widget.file);
-    setState(() {
-      isLoading = false;
-    });
+
+    final Directory appDir = await getApplicationDocumentsDirectory();
+    final String audioPath = '${appDir.path}/temp_audio.mp3';
+
+    final http.Response response = await http.get(Uri.parse(data['url']));
+    if (response.statusCode == 200) {
+      final File audioFile = File(audioPath);
+      await audioFile.writeAsBytes(response.bodyBytes);
+
+      await _trimmer.loadAudio(audioFile: audioFile);
+
+      setState(() {
+        isLoading = false;
+      });
+    } else {
+      throw Exception('Failed to download audio');
+    }
   }
 
-  _saveAudio() {
+  Future<void> _saveAudio() async {
     setState(() {
       _progressVisibility = true;
     });
 
-    _trimmer.saveTrimmedAudio(
+    await _trimmer.saveTrimmedAudio(
       startValue: _startValue,
       endValue: _endValue,
-      audioFileName: DateTime.now().millisecondsSinceEpoch.toString(),
+      audioFileName: 'trimmed_audio_${DateTime.now().millisecondsSinceEpoch}.mp3',
       onSave: (outputPath) {
         setState(() {
           _progressVisibility = false;
@@ -59,10 +74,7 @@ class _AudioTrimmerViewState extends State<AudioTrimmerView> {
 
   @override
   void dispose() {
-    if (mounted) {
-      _trimmer.dispose();
-    }
-
+    _player.dispose();
     super.dispose();
   }
 
@@ -71,70 +83,106 @@ class _AudioTrimmerViewState extends State<AudioTrimmerView> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xff6EA9FF),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        centerTitle: true,
-        title: const Text(
-          "Audio Editor",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        iconTheme: const IconThemeData(color: Colors.black),
+        actions: [
+          isLoading ? const SizedBox.shrink() :
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade50),
+            onPressed: _progressVisibility ? null : () => _saveAudio(),
+            child: const Text("SAVE", style: TextStyle(color: Colors.lightBlueAccent)),
+          ),
+        ],
       ),
-      body: Center(
-              child: Container(
-                padding: const EdgeInsets.only(bottom: 30.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.max,
-                  children: <Widget>[
-                    Visibility(
-                      visible: _progressVisibility,
-                      child: LinearProgressIndicator(
-                        backgroundColor:
-                            Theme.of(context).primaryColor.withOpacity(0.5),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: _progressVisibility ? null : () => _saveAudio(),
-                      child: const Text("SAVE"),
-                    ),
-                    SizedBox(
-                      height: 250,
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: TrimViewer(
-                            trimmer: _trimmer,
-                            viewerHeight: 100,
-                            maxAudioLength: const Duration(seconds: 50),
-                            viewerWidth: MediaQuery.of(context).size.width,
-                            durationStyle: DurationStyle.FORMAT_MM_SS,
-                            backgroundColor: Theme.of(context).primaryColor,
-                            barColor: Colors.white,
-                            durationTextStyle: TextStyle(color: Theme.of(context).primaryColor),
-                            allowAudioSelection: true,
-                            editorProperties: TrimEditorProperties(circleSize: 10,borderPaintColor: Colors.yellowAccent,borderWidth: 4,borderRadius: 5,circlePaintColor: Colors.yellow.shade400),
-                            areaProperties: TrimAreaProperties.edgeBlur(blurEdges: true),
-                            onChangeStart: (value) => _startValue = value,
-                            onChangeEnd: (value) => _endValue = value,
-                            onChangePlaybackState: (value) => _isPlaying = value,
-                          ),
+      body: isLoading ?
+      const Center(child: CircularProgressIndicator()) :
+      SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.only(bottom: 30.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 155,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(2, 2)),
+                          ],
+                        ),
+                        child: Center(
+                          child: Image.network(data['artwork'], height: 150, width: 150, filterQuality: FilterQuality.high),
                         ),
                       ),
-                    ),
-                    TextButton(
-                      child: _isPlaying
-                          ? Icon(Icons.pause,size: 80.0,color: Theme.of(context).primaryColor,)
-                          : Icon(Icons.play_arrow,size: 80.0,color: Theme.of(context).primaryColor,),
-                      onPressed: () async {
-                        bool playbackState = await _trimmer.audioPlaybackControl(startValue: _startValue,endValue: _endValue,);
-                        setState(() => _isPlaying = playbackState);
-                      },
-                    )
-                  ],
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(data['artist']),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(data['title']),
+                      )
+                    ],
+                  ),
                 ),
-              ),
+                TrimViewer(
+                  trimmer: _trimmer,
+                  viewerHeight: 50,
+                  viewerWidth: MediaQuery.of(context).size.width,
+                  durationStyle: DurationStyle.FORMAT_MM_SS,
+                  backgroundColor: Colors.teal,
+                  maxAudioLength:  const Duration(seconds: 30),
+                  barColor: Colors.white,
+                  showDuration: true,
+                  durationTextStyle: const TextStyle(color: Colors.black),
+                  allowAudioSelection: true,
+                  paddingFraction: 2.0,
+                  editorProperties: const TrimEditorProperties(
+                    circleSize: 5.0,
+                    circleSizeOnDrag: 8.0,
+                    borderWidth: 3.0,
+                    scrubberWidth: 1.0,
+                    borderRadius: 4.0,
+                    circlePaintColor: Colors.lightBlueAccent,
+                    borderPaintColor: Colors.lightBlueAccent,
+                    scrubberPaintColor: Colors.lightBlueAccent,
+                    sideTapSize: 24,
+                  ),
+                  areaProperties: TrimAreaProperties.fixed(),
+                  onChangeStart: (value) {
+                    _startValue = value;
+                  },
+                  onChangeEnd: (value) {
+                    _endValue = value;
+                  },
+                  onChangePlaybackState: (value) {
+                    setState(() => _isPlaying = value);
+                  },
+                ),
+                TextButton(
+                  child: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, size: 80.0, color: Colors.teal),
+                  onPressed: () async {
+                    bool playbackState = await _trimmer.audioPlaybackControl(startValue: _startValue, endValue: _endValue);
+                    setState(() => _isPlaying = playbackState);
+                  },
+                ),
+                Visibility(
+                  visible: _progressVisibility,
+                  child: LinearProgressIndicator(backgroundColor: Theme.of(context).primaryColor.withOpacity(0.5)),
+                ),
+              ],
             ),
+          ),
+        ),
+      ),
     );
   }
 }
