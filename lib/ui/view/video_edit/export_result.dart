@@ -82,32 +82,30 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
         ),
       ),
       body: Center(
-        child: Stack(
-          alignment: Alignment.bottomLeft,
-          children: [
-            SizedBox(
-              width: MediaQuery.of(context).size.width,
-              child: AspectRatio( aspectRatio: _fileDimension.aspectRatio == 0 ? 1 : _fileDimension.aspectRatio,
+        child: Expanded(
+          child: Stack(
+            alignment: Alignment.bottomLeft,
+            children: [
+              AspectRatio( aspectRatio: _fileDimension.aspectRatio == 0 ? 1 : _fileDimension.aspectRatio,
                 child: _isGif ? Image.file(widget.video) : VideoPlayer(_controller!),
               ),
-            ),
-            Positioned(
-              bottom: 0,
-              child: widget.title ? FileDescription(
-                description: {
-                  if (!_isGif)
-                    'Video duration': '${((_controller?.value.duration.inMilliseconds ?? 0) / 1000).toStringAsFixed(2)}s',
-                    'Video ratio': Fraction.fromDouble(_fileDimension.aspectRatio).reduce().toString(),
-                    'Video dimension': _fileDimension.toString(),
-                    'Video size': _fileMbSize,
-                },
-              ): const SizedBox.shrink(),
-            ),
-          ],
+              Positioned(
+                bottom: 0,
+                child: widget.title ? FileDescription(
+                  description: {
+                    if (!_isGif)
+                      'Video duration': '${((_controller?.value.duration.inMilliseconds ?? 0) / 1000).toStringAsFixed(2)}s',
+                      'Video ratio': Fraction.fromDouble(_fileDimension.aspectRatio).reduce().toString(),
+                      'Video dimension': _fileDimension.toString(),
+                      'Video size': _fileMbSize,
+                  },
+                ): const SizedBox.shrink(),
+              ),
+            ],
+          ),
         ),
       ),
-      bottomNavigationBar:  widget.title ?
-      Container(
+      bottomNavigationBar:  widget.title ? Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -150,8 +148,7 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
             ),
           ],
         ),
-      ) :
-      const SizedBox.shrink(),
+      ) : const SizedBox.shrink(),
     );
   }
 }

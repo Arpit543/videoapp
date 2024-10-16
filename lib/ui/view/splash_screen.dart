@@ -5,6 +5,8 @@ import 'package:videoapp/core/constants.dart';
 import 'package:videoapp/ui/view/auth_pages/login.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
 
+import '../widget/tab.dart';
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -44,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen> {
     } else if (cameraStatus.isGranted && storageStatus.isGranted) {
       Future.delayed(const Duration(seconds: 5), () async {
         if (Constants.getBool(Constants.isLogin) == true) {
-          Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const HomeScreen()), (route) => false);
+          Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const TabScreen()), (route) => false);
         } else {
           Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const Login()), (route) => false);
         }

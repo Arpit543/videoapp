@@ -8,7 +8,8 @@ import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/image_editor/image_editor.dart';
 import 'package:videoapp/ui/view/my_work/tab_vew.dart';
 import 'package:videoapp/ui/view/splash_screen.dart';
-import 'package:videoapp/ui/view/story_view.dart';
+import 'package:videoapp/ui/view/story/file_view.dart';
+import 'package:videoapp/ui/view/story/story_view.dart';
 import 'package:videoapp/ui/view/video_edit/video_editor.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -26,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String name = "User";
 
-  List<String> storyItems = [];
+  List<StoryTypeModel> storyItems = [];
 
   @override
   void initState() {
@@ -66,6 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,11 +81,17 @@ class _HomeScreenState extends State<HomeScreen> {
             try {
               final pickedFile = await _picker.pickMultipleMedia();
               for (var element in pickedFile) {
-                storyItems.add(element.path);
+                if(element.path.contains(".jpg")){
+                  storyItems.add(StoryTypeModel(story: element.path, type: StoryType.Image));
+                } else if (element.path.contains(".mp4")){
+                  storyItems.add(StoryTypeModel(story: element.path, type: StoryType.Video));
+                }
               }
               setState(() {});
-              upload.uploadListInStorage(images: storyItems, type: "Story", context: context);
-              // Navigator.push(context,MaterialPageRoute(builder: (context) => StoryViewScreen(storyItems: storyItems,)));
+              Navigator.push(context, MaterialPageRoute(builder: (context) =>  FileView(storyItems: storyItems,),));
+             /* upload.uploadListInStorage(images: storyItems, type: "Story", context: context);
+              upload.getStoryData();
+              Navigator.push(context,MaterialPageRoute(builder: (context) => const StoryViewScreen()));*/
             } catch (e) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error picking video: $e')));
             }
@@ -118,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 children: [
                  ClipOval(
-                   child: InkWell(onTap: () => Get.to(StoryViewScreen(storyItems: storyItems,)), child: Image.network("https://picsum.photos/250", width: 60, height: 60,)),
+                   child: InkWell(onTap: () => Get.to(const StoryViewScreen()), child: Image.network("https://picsum.photos/250", width: 60, height: 60,)),
                  )
                 ],
               ),
@@ -189,4 +197,15 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+}
+
+enum StoryType {
+  Image, Video, Text
+}
+
+class StoryTypeModel{
+  final String story;
+  final StoryType type;
+
+  StoryTypeModel({required this.story, required this.type});
 }

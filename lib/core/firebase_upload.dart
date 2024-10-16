@@ -9,6 +9,7 @@ import 'package:videoapp/ui/view/splash_screen.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
 
 import '../ui/view/auth_pages/login.dart';
+import '../ui/view/story/story_view.dart';
 import 'constants.dart';
 
 class FirebaseUpload {
@@ -37,6 +38,7 @@ class FirebaseUpload {
     }
   }
 
+  ///   Upload Image n Video to Firebase using [uploadListInStorage]
   Future<void> uploadListInStorage({required List<String> images,required String type,required BuildContext context,}) async {
     final storage = FirebaseStorage.instance;
     final auth = FirebaseAuth.instance;
@@ -58,11 +60,27 @@ class FirebaseUpload {
 
         String downloadUrl = await snapshot.ref.getDownloadURL();
 
-        showSnackBar(message: '$fileName uploaded successfully!', context: context, isError: false);
-      } catch (e) {
-        print(e); // Log error for debugging
+        showSnackBar(message: 'Story uploaded successfully!', context: context, isError: false);
+       } catch (e) {
+        print(e);
         showSnackBar(message: 'Failed to upload $imagePath', context: context, isError: true);
       }
+    }
+  }
+
+  Future<List<String>> fetchStoryList() async {
+    try {
+      final storageRefImages = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/Story");
+      final listResultImages = await storageRefImages.listAll();
+      final imageUrls = <String>[];
+      for (final item in listResultImages.items) {
+        final downloadUrl = await item.getDownloadURL();
+        imageUrls.add(downloadUrl);
+      }
+
+      return imageUrls;
+    } on FirebaseException {
+      return [];
     }
   }
 
@@ -119,6 +137,18 @@ class FirebaseUpload {
       videoURLs = videoURL;
       lenVideos = videoURL.length;
     } else {}
+  }
+
+  ///   Function [getStoryData] to get video
+  Future<List<String>> getStoryData() async {
+    final videoURL = await fetchStoryList();
+
+    if (videoURL.isNotEmpty) {
+      videoURLs = videoURL;
+      lenVideos = videoURL.length;
+
+    } else {}
+    return videoURLs;
   }
 
   ///   Register User With Email n Password
