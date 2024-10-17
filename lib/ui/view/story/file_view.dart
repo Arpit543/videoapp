@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
 import 'package:videoapp/ui/view/image_editor/image_editor.dart';
 import 'package:videoapp/ui/view/video_edit/video_editor.dart';
+import 'package:videoapp/ui/widget/common_snackbar.dart';
 
 class FileView extends StatefulWidget {
   final List<StoryTypeModel> storyItems;
@@ -21,6 +22,11 @@ class _FileViewState extends State<FileView> {
   PageController pageController = PageController();
   VideoPlayerController? _controller;
   bool isLoadingVideo = true;
+  final double height = 60;
+  late VideoEditorController _controllerEdit;
+  int length = 0;
+  bool _showTrimSlider = false;
+
 
   @override
   void initState() {
@@ -38,6 +44,13 @@ class _FileViewState extends State<FileView> {
         isLoadingVideo = true;
       });
 
+      _controllerEdit = VideoEditorController.file(
+          File(widget.storyItems[index].story),
+          minDuration: const Duration(seconds: 1),
+          maxDuration: const Duration(seconds: 30),
+          coverThumbnailsQuality: 100,
+          trimThumbnailsQuality: 100);
+
       final File videoFile = File(widget.storyItems[index].story);
       _controller = VideoPlayerController.file(videoFile);
 
@@ -45,6 +58,11 @@ class _FileViewState extends State<FileView> {
       setState(() {
         isLoadingVideo = false;
         _controller!.play();
+        length = _controller!.value.duration.inSeconds;
+        if(length > 30) {
+          _showTrimSlider = true;
+        }
+        print("Length :- $length");
         _controller!.setLooping(true);
       });
     }
@@ -73,7 +91,6 @@ class _FileViewState extends State<FileView> {
         child: Column(
           children: [
             Expanded(
-              flex: 2,
               child: PageView.builder(
                 controller: pageController,
                 itemCount: widget.storyItems.length,
@@ -98,7 +115,12 @@ class _FileViewState extends State<FileView> {
                 },
               ),
             ),
-            // Smooth Page Indicator
+            /*if (_showTrimSlider) Flexible(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: _trimSlider(_controllerEdit),
+              ),
+            ),*/
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: SmoothPageIndicator(
@@ -146,14 +168,17 @@ class _FileViewState extends State<FileView> {
                     flex: 1,
                     child: IconButton(
                       onPressed: () {
-                        _handleEdit(widget.storyItems);
+                        if (length > 30) {
+                          showSnackBar(context: context, message: "Please select video length up to 30 seconds");
+                        } else {
+                          _handleEdit(widget.storyItems);
+                        }
                       },
                       icon: Center(
                         child: Text(
                           "Edit",
                           style: TextStyle(
-                            color:
-                                const CropGridStyle().selectedBoundariesColor,
+                            color: const CropGridStyle().selectedBoundariesColor,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -169,35 +194,83 @@ class _FileViewState extends State<FileView> {
     );
   }
 
+  String formatter(Duration duration) => [
+    duration.inMinutes.remainder(60).toString().padLeft(2, '0'),
+    duration.inSeconds.remainder(60).toString().padLeft(2, '0')
+  ].join(":");
+
+  List<Widget> _trimSlider(VideoEditorController controllerEdit) {
+    return [
+      AnimatedBuilder(
+        animation: Listenable.merge([
+          controllerEdit,
+          controllerEdit.video,
+        ]),
+        builder: (_, __) {
+          final int duration = controllerEdit.videoDuration.inSeconds;
+          final double pos = controllerEdit.trimPosition * duration;
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 50),
+            child: Row(
+              children: [
+                Text(
+                  formatter(Duration(seconds: pos.toInt())),
+                  style: const TextStyle(fontWeight: FontWeight.bold), // Improved text visibility
+                ),
+                const Expanded(child: SizedBox()),
+                const Expanded(child: SizedBox()),
+                AnimatedOpacity(
+                  opacity: controllerEdit.isTrimming ? 1 : 0,
+                  duration: kThemeAnimationDuration,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        formatter(controllerEdit.startTrim),
+                        style: const TextStyle(color: Colors.black), // Consistent text color
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        formatter(controllerEdit.endTrim),
+                        style: const TextStyle(color: Colors.black), // Consistent text color
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+      SizedBox(
+        width: MediaQuery.of(context).size.width,
+        child: TrimSlider(
+          controller: controllerEdit,
+          scrollController: ScrollController(keepScrollOffset: true),
+          height: height,
+          horizontalMargin: height / 4,
+          child: TrimTimeline(
+            controller: controllerEdit,
+            padding: const EdgeInsets.only(top: 10),
+          ),
+        ),
+      ),
+    ];
+  }
+
   void _handleEdit(List<StoryTypeModel> storyItems) {
     for (var item in storyItems) {
       print("URLS : $item");
       if (item.story.contains('.jpg') || item.story.contains('.png') || item.story.contains('.jpeg')) {
-        // Navigate to Image Editor
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ImageEditor(file: File(item.story)), // Replace with your Image Editor Screen
-          ),
-        );
-        break; // Exit the loop after navigating
+        Navigator.push(context,MaterialPageRoute(builder: (context) => ImageEditor(file: File(item.story)),),);
+        break;
       } else if (item.story.contains('.mp4') || item.story.contains('.mov') || item.story.contains('.avi') || item.story.contains('.mp3') || item.story.contains('.mkv')) {
-        // Navigate to Video Editor
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VideoEditor(file: File(item.story)), // Replace with your Video Editor Screen
-          ),
-        );
-        break; // Exit the loop after navigating
+        Navigator.push(context,MaterialPageRoute(builder: (context) => VideoEditor(file: File(item.story)),),);
+        break;
       } else {
-        // Handle unsupported file types
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unsupported file type for editing: $item.contains()'),
-          ),
-        );
-        break; // Exit after showing the message
+        showSnackBar(context: context, message: "Unsupported file type for editing: $item");
+        break;
       }
     }
   }

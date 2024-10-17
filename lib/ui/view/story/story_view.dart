@@ -44,15 +44,16 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
               style: TextStyle(color: Colors.white, fontSize: 16),
             ),
             controller: storyController,
-            imageFit: BoxFit.cover, // Adjust to ensure the image fits well
+            imageFit: BoxFit.cover,
           ),
         );
       } else if (item.startsWith('http') && item.contains('.mp4')) {
-        _videoController = VideoPlayerController.network(item)
+        _videoController = VideoPlayerController.networkUrl(Uri.parse(item))
           ..initialize().then((_) {
-            setState(() {}); // Ensure video is ready before display
+            setState(() {});
           });
 
+        VideoPlayer(_videoController!);
         storyData.add(
           StoryItem.pageVideo(
             item,

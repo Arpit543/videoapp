@@ -32,9 +32,9 @@ class FirebaseUpload {
 
     try {
       storageRef.putFile(file);
-      showSnackBar(message: 'File Uploaded successfully',context: context,isError: false);
+      showSnackBar(message: 'File Edited successfully',context: context,isError: false);
     } catch (e) {
-      showSnackBar(message: 'File Failed to Upload', context: context, isError: true);
+      showSnackBar(message: 'Unable to Edit File', context: context, isError: true);
     }
   }
 

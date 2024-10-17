@@ -56,21 +56,11 @@ class _ImageEditorState extends State<ImageEditor> {
                     _isUploading = true;
                   });
                   File editedImageFile = await _convertBytesToFile(bytes);
-                  await upload.uploadFileInStorage(
-                    file: editedImageFile,
-                    type: "Images",
-                    context: context,
-                  );
+                  await upload.uploadFileInStorage(file: editedImageFile,type: "Images",context: context);
                   setState(() {
                     _isUploading = false;
                   });
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const HomeScreen(),
-                    ),
-                        (route) => false,
-                  );
+                  Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const HomeScreen(),),(route) => false,);
                 },
               ),
             ),

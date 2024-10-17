@@ -117,9 +117,7 @@ class _RegisterState extends State<Register> {
                 const SizedBox(height: 20),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
-                  child: _isLoading
-                      ? const CircularProgressIndicator()
-                      : CustomBtn(
+                  child: _isLoading ? const CircularProgressIndicator() : CustomBtn(
                     name: "Sign Up",
                     borderColor: const Color(0xffeceef1),
                     onTap: () {

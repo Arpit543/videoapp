@@ -20,8 +20,8 @@ class _MyVideosWorkState extends State<MyVideosWork> {
 
   @override
   void initState() {
-    super.initState();
     _dataFutureVideos = upload.getVideoData();
+    super.initState();
   }
 
   @override

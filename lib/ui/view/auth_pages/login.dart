@@ -105,9 +105,7 @@ class _LoginState extends State<Login> {
                 const SizedBox(height: 20),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
-                  child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : CustomBtn(
+                  child: _isLoading ? const Center(child: CircularProgressIndicator()) : CustomBtn(
                     name: "Sign In",
                     borderColor: const Color(0xffeceef1),
                     onTap: () async {

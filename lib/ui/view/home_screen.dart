@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -77,16 +78,27 @@ class _HomeScreenState extends State<HomeScreen> {
         leading: InkWell(
           onTap: () async {
             try {
-              final pickedFile = await _picker.pickMultipleMedia();
-              for (var element in pickedFile) {
-                if (element.path.contains(".jpg")) {
-                  storyItems.add(StoryTypeModel(story: element.path, type: StoryType.Image));
-                } else if (element.path.contains(".mp4")) {
-                  storyItems.add(StoryTypeModel(story: element.path, type: StoryType.Video));
+
+              final pickedFiles = await FilePicker.platform.pickFiles(
+                type: FileType.custom,
+                allowMultiple: true,
+                withData: true,
+                allowedExtensions: ['jpg', 'jpeg', 'png', 'mov', 'mp4', 'mkv','avi'],
+              );
+
+              if (pickedFiles != null) {
+                for (final file in pickedFiles.files) {
+                  final path = file.path;
+                  if (path != null) {
+                    if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png')) {
+                      storyItems.add(StoryTypeModel(story: path, type: StoryType.Image));
+                    } else if (path.endsWith('.mov') || path.endsWith('.mp4') || path.endsWith('.mkv') || path.endsWith('.avi')) {storyItems.add(StoryTypeModel(story: path, type: StoryType.Video));
+                    }
+                  }
                 }
               }
               setState(() {});
-              Navigator.push(context, MaterialPageRoute(builder: (context) => FileView(storyItems: storyItems)));
+              if (storyItems.isNotEmpty) Navigator.push(context, MaterialPageRoute(builder: (context) => FileView(storyItems: storyItems)));
             } catch (e) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error picking media: $e')));
             }
@@ -104,11 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
           InkWell(
             onTap: () {
               Constants.clear();
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const SplashScreen()),
-                    (route) => false,
-              );
+              Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const SplashScreen()),(route) => false,);
             },
             child: const Padding(
               padding: EdgeInsets.all(10.0),
@@ -139,9 +147,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Text(
+                  const Text(
                     "My Story",
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ],
               ),

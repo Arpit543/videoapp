@@ -42,9 +42,9 @@ class _MyWorkTabState extends State<MyWorkTab>
           onPressed: () => Get.back(),
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
-        title: Text(
+        title: const Text(
           "My Work",
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
       body: Column(
@@ -54,10 +54,10 @@ class _MyWorkTabState extends State<MyWorkTab>
             color: Colors.white,
             child: TabBar(
               controller: tabController,
-              indicatorColor: const Color(0xff6EA9FF), // Match app's theme
-              indicatorWeight: 4, // Thicker underline for active tab
-              labelColor: Colors.black, // Active tab text color
-              unselectedLabelColor: Colors.grey, // Inactive tab text color
+              indicatorColor: const Color(0xff6EA9FF),
+              indicatorWeight: 4,
+              labelColor: Colors.black,
+              unselectedLabelColor: Colors.grey,
               labelStyle: const TextStyle(fontWeight: FontWeight.bold),
               tabs: const [
                 Tab(text: "Images"),
@@ -69,7 +69,7 @@ class _MyWorkTabState extends State<MyWorkTab>
           Expanded(
             child: TabBarView(
               controller: tabController,
-              physics: const BouncingScrollPhysics(), // Smooth scrolling effect
+              physics: const BouncingScrollPhysics(),
               children: const [
                 MyImagesWork(),
                 MyVideosWork(),

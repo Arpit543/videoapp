@@ -33,8 +33,7 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
   VideoPlayerController? _controller;
   FileImage? _fileImage;
   Size _fileDimension = Size.zero;
-  late final bool _isGif =
-      path.extension(widget.video.path).toLowerCase() == ".gif";
+  late final bool _isGif = path.extension(widget.video.path).toLowerCase() == ".gif";
   late String _fileMbSize;
   FirebaseUpload firebaseUpload = FirebaseUpload();
 
@@ -88,48 +87,41 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
             ),
           ),
         ),
-        body: Column(
-          children: [
-            Expanded(
-              child: Stack(
-                alignment: Alignment.bottomLeft,
-                children: [
-                  AspectRatio(
-                    aspectRatio: _fileDimension.aspectRatio != 0
-                        ? _fileDimension.aspectRatio
-                        : 1,
-                    child: _isGif
-                        ? Image.file(widget.video, fit: BoxFit.cover)
-                        : SizedBox(
-                      height: MediaQuery.of(context).size.height,
-                        child: VideoPlayer(_controller!)),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(5),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Stack(
+                    alignment: Alignment.bottomLeft,
+                    children: [
+                      AspectRatio( aspectRatio: _fileDimension.aspectRatio != 0 ? _fileDimension.aspectRatio : 1,
+                        child: _isGif ? Image.file(widget.video, fit: BoxFit.cover) : VideoPlayer(_controller!),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: widget.title
+                            ? FileDescription(
+                                description: {
+                                  if (!_isGif)
+                                    'Video duration': '${((_controller?.value.duration.inMilliseconds ?? 0) / 1000).toStringAsFixed(2)}s',
+                                  'Video ratio': Fraction.fromDouble(_fileDimension.aspectRatio).reduce().toString(),
+                                  'Video dimension': _fileDimension.toString(),
+                                  'Video size': _fileMbSize,
+                                },
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
                   ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: widget.title
-                        ? FileDescription(
-                            description: {
-                              if (!_isGif)
-                                'Video duration':
-                                    '${((_controller?.value.duration.inMilliseconds ?? 0) / 1000).toStringAsFixed(2)}s',
-                              'Video ratio': Fraction.fromDouble(
-                                      _fileDimension.aspectRatio)
-                                  .reduce()
-                                  .toString(),
-                              'Video dimension': _fileDimension.toString(),
-                              'Video size': _fileMbSize,
-                            },
-                          )
-                        : const SizedBox(
-                            height: 10,
-                          ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
         bottomNavigationBar: widget.title
             ? Container(
@@ -190,7 +182,7 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                   ],
                 ),
               )
-            : const SizedBox(height: 50),
+            : const SizedBox.shrink()//height: 50),
       ),
     );
   }
@@ -241,8 +233,7 @@ class _CoverResultPopupState extends State<CoverResultPopup> {
             Container(
               decoration: const BoxDecoration(
                 color: Colors.black54,
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(15)),
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(15)),
               ),
               padding: const EdgeInsets.all(10),
               child: Column(
@@ -259,12 +250,8 @@ class _CoverResultPopupState extends State<CoverResultPopup> {
                   FileDescription(
                     description: {
                       'Cover path': widget.cover.path,
-                      'Cover ratio':
-                          Fraction.fromDouble(_fileDimension?.aspectRatio ?? 0)
-                              .reduce()
-                              .toString(),
-                      'Cover dimension':
-                          _fileDimension?.toString() ?? 'Unknown',
+                      'Cover ratio': Fraction.fromDouble(_fileDimension?.aspectRatio ?? 0).reduce().toString(),
+                      'Cover dimension': _fileDimension?.toString() ?? 'Unknown',
                       'Cover size': _fileMbSize,
                     },
                   ),
@@ -290,14 +277,12 @@ class FileDescription extends StatelessWidget {
       width: MediaQuery.of(context).size.width - 60,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.7), // Slightly darker for contrast
-        borderRadius: BorderRadius.circular(8), // Rounded corners
+        color: Colors.black.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: ListView(
         shrinkWrap: true,
-        // Allows the ListView to take only the needed space
         physics: const NeverScrollableScrollPhysics(),
-        // Disable scrolling for smooth integration
         children: description.entries
             .map(
               (entry) => Padding(
@@ -309,17 +294,13 @@ class FileDescription extends StatelessWidget {
                         text: '${entry.key}: ',
                         style: const TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.bold, // Bold for keys
-                          color: Colors.white, // Ensure visibility
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                       TextSpan(
                         text: entry.value,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.white.withOpacity(
-                              0.85), // Slightly higher opacity for value
-                        ),
+                        style: TextStyle(fontSize: 11,color: Colors.white.withOpacity(0.85),),
                       ),
                     ],
                   ),

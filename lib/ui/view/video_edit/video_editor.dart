@@ -12,7 +12,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:video_editor/video_editor.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/core/model/song_model.dart';
-import 'package:videoapp/ui/view/video_edit/audio_trimmer.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
 
 import 'crop_page.dart';
@@ -22,8 +21,9 @@ import 'find_song.dart';
 
 class VideoEditor extends StatefulWidget {
   final File file;
+  File? audio;
 
-  const VideoEditor({super.key, required this.file});
+  VideoEditor({super.key, required this.file, this.audio});
 
   @override
   State<VideoEditor> createState() => _VideoEditorState();
@@ -47,8 +47,8 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
 
   @override
   void initState() {
-    fetchSongs();
     super.initState();
+    fetchSongs();
     _controller.initialize(aspectRatio: 9 / 16).then((_) {
       setState(() {});
       _controller.video.setVolume(1.0);
@@ -56,6 +56,24 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     }).catchError((error) {
       Navigator.pop(context);
     }, test: (e) => e is VideoMinDurationError);
+   /* _controller.initialize(aspectRatio: 9 / 16).then((_) {
+      setState(() {
+        _controller.video.setVolume(1.0);
+        if (widget.audio != null && widget.audio!.path.isNotEmpty) {
+          player.setFilePath(widget.audio!.path).then((_) {
+            player.play();
+            isMuted.value = true;
+          }).catchError((error) {
+            print('Error setting file path: $error');
+          });
+        } else {
+          print('Invalid audio path: ${widget.audio?.path}');
+        }
+      });
+    }).catchError((error) {
+      Navigator.pop(context);
+      print('Error initializing video controller: $error');
+    }, test: (e) => e is VideoMinDurationError);*/
   }
 
   @override
@@ -90,14 +108,12 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                                     Stack(
                                       alignment: Alignment.center,
                                       children: [
-                                        CropGridViewer.preview(
-                                            controller: _controller),
+                                        CropGridViewer.preview(controller: _controller),
                                         AnimatedBuilder(
                                           animation: _controller.video,
                                           child: Container(color: Colors.white),
                                           builder: (_, __) => AnimatedOpacity(
-                                            opacity:
-                                                _controller.isPlaying ? 0 : 1,
+                                            opacity: _controller.isPlaying ? 0 : 1,
                                             duration: kThemeAnimationDuration,
                                             child: GestureDetector(
                                               onTap: _controller.video.play,
@@ -108,18 +124,10 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                                                   color: Colors.white,
                                                   shape: BoxShape.circle,
                                                   boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.black26,
-                                                      blurRadius: 8,
-                                                      offset:
-                                                          Offset(0, 4),
-                                                    ),
+                                                    BoxShadow(color: Colors.black26,blurRadius: 8,offset: Offset(0, 4),),
                                                   ],
                                                 ),
-                                                child: const Icon(
-                                                    Icons.play_arrow,
-                                                    color: Colors.black,
-                                                    size: 30),
+                                                child: const Icon(Icons.play_arrow,color: Colors.black,size: 30),
                                               ),
                                             ),
                                           ),
@@ -140,22 +148,16 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                                   children: [
                                     const TabBar(
                                       tabs: [
-                                        Padding(
-                                            padding: EdgeInsets.all(5),
-                                            child: Icon(Icons.content_cut)),
-                                        Padding(
-                                            padding: EdgeInsets.all(5),
-                                            child: Icon(Icons.video_label)),
+                                        Padding(padding: EdgeInsets.all(5),child: Icon(Icons.content_cut)),
+                                        Padding(padding: EdgeInsets.all(5),child: Icon(Icons.video_label)),
                                       ],
                                     ),
                                     Expanded(
                                       child: TabBarView(
-                                        physics:
-                                            const NeverScrollableScrollPhysics(),
+                                        physics: const NeverScrollableScrollPhysics(),
                                         children: [
                                           Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
+                                            mainAxisAlignment: MainAxisAlignment.center,
                                             children: _trimSlider(),
                                           ),
                                           _coverSelection(),
@@ -172,18 +174,14 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                                     duration: kThemeAnimationDuration,
                                     child: export
                                         ? AlertDialog(
-                                            backgroundColor:
-                                                const Color(0xff6EA9FF),
+                                            backgroundColor: const Color(0xff6EA9FF),
                                             title: ValueListenableBuilder(
-                                              valueListenable:
-                                                  _exportingProgress,
+                                              valueListenable: _exportingProgress,
                                               builder: (_, double value, __) =>
                                                   Center(
-                                                child: Text(
-                                                  "Exporting video ${(value * 100).ceil()}%",
-                                                  style: const TextStyle(
-                                                      color: Colors.black,
-                                                      fontSize: 16),
+                                                    child: Text(
+                                                      "Exporting video ${(value * 100).ceil()}%",
+                                                      style: const TextStyle(color: Colors.black,fontSize: 16),
                                                 ),
                                               ),
                                             ),
@@ -230,10 +228,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
       onError: (e, s) => showSnackBar(context: context, message: "Error on Export video"),
       onCompleted: (exportedFile) async {
         _isExporting.value = false;
-        Get.to(VideoResultPopup(
-          video: exportedFile,
-          title: true,
-        ));
+        Get.to(VideoResultPopup(video: exportedFile,title: true,));
       },
     );
   }
@@ -251,8 +246,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
 
     await ExportService.runFFmpegCommand(
       execute,
-      onError: (e, s) =>
-          showSnackBar(context: context, message: "Error on Export cover"),
+      onError: (e, s) => showSnackBar(context: context, message: "Error on Export cover"),
       onCompleted: (cover) {
         if (!mounted) return;
         showDialog(
@@ -323,7 +317,11 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
               child: Tooltip(
                 message: 'Music',
                 child: IconButton(
-                  onPressed: () => Get.to(const FindSong()),
+                  onPressed: () {
+                    Duration duration = _controller.startTrim;
+                    Duration duration1 = _controller.endTrim;
+                    Duration totalDuration = calculateTotalDuration("$duration", "$duration1");
+                    Get.to(FindSong(file: widget.file,duration: totalDuration)); },
                   icon: const Icon(Icons.music_note, size: 30),
                 ),
               ),
@@ -362,6 +360,21 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     );
   }
 
+  Duration calculateTotalDuration(String duration1, String duration2) {
+    Duration d1 = Duration(
+      hours: int.parse(duration1.split(':')[0]),minutes: int.parse(duration1.split(':')[1]),
+      seconds: int.parse(duration1.split(':')[2].split('.')[0]),
+      microseconds: int.parse(duration1.split(':')[2].split('.')[1]),
+    );
+    Duration d2 = Duration(
+      hours: int.parse(duration2.split(':')[0]),
+      minutes: int.parse(duration2.split(':')[1]),
+      seconds: int.parse(duration2.split(':')[2].split('.')[0]),
+      microseconds: int.parse(duration2.split(':')[2].split('.')[1]),
+    );
+    Duration totalDuration = d2 - d1;
+    return totalDuration;
+  }
 
   ///   Formatter for length
   String formatter(Duration duration) => [
@@ -413,22 +426,17 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
           );
         },
       ),
-      Container(
+      SizedBox(
         width: MediaQuery.of(context).size.width,
-        margin: EdgeInsets.symmetric(vertical: height / 4),
-        child: Column(
-          children: [
-            TrimSlider(
-              controller: _controller,
-              scrollController: ScrollController(keepScrollOffset: true),
-              height: height,
-              horizontalMargin: height / 4,
-              child: TrimTimeline(
-                controller: _controller,
-                padding: const EdgeInsets.only(top: 10),
-              ),
-            ),
-          ],
+        child: TrimSlider(
+          controller: _controller,
+          scrollController: ScrollController(keepScrollOffset: true),
+          height: height,
+          horizontalMargin: height / 4,
+          child: TrimTimeline(
+            controller: _controller,
+            padding: const EdgeInsets.only(top: 10),
+          ),
         ),
       ),
     ];
@@ -443,7 +451,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     return jsonList.map((json) => Song.fromJson(json)).toList();
   }
 
-  ///   Merge Audio and Video [mergeAudioAndVideo]
+  ///   Merge Audio and Video [mergeAudioAndVideo] and [getUniqueFilePath]
   Future<String> mergeAudioAndVideo(String videoPath, String audioUrl) async {
     try {
       final Directory appDir = await getApplicationDocumentsDirectory();
@@ -514,170 +522,6 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     }
 
     return fullPath;
-  }
-
-  ///   Show Music Bottom Sheet
-  void _showMusicBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      isDismissible: true,
-      builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.5),
-                spreadRadius: 5,
-                blurRadius: 7,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
-            child: _musicList(),
-          ),
-        );
-      },
-    );
-  }
-
-  ///   Show Music List
-  Widget _musicList() {
-    return FutureBuilder<List<Song>>(
-      future: fetchSongs(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          return ListView.builder(
-            shrinkWrap: true,
-            physics: const AlwaysScrollableScrollPhysics(),
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) {
-              final song = snapshot.data![index];
-              return Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: InkWell(
-                  onTap: () async {
-                    String videoPath = widget.file.path;
-                    String audioUrl = song.url;
-                    Map<String, dynamic> map = {
-                      "title": song.title,
-                      "artist": song.artist,
-                      "artwork": song.artwork,
-                      "url": song.url,
-                      "id": song.id
-                    };
-                    print(" Map:- $map");
-                    /*print("Audio $audioUrl");
-                    mergeAudioAndVideo(videoPath, audioUrl).then((outputPath) {
-                      print('Merged video saved at $outputPath');
-                    }).catchError((error) {
-                      print('Error: $error');
-                    });*/
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AudioTrimmerViewDemo(
-                            song: map,
-                          ),
-                        ));
-                    // downloadAndTrimAudio(audioUrl, context);
-                    //Navigator.pop(context);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.black),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.white,
-                          blurRadius: 8,
-                          offset: Offset(2, 2),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(5),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(5),
-                                child: Image.network(
-                                  song.artwork,
-                                  fit: BoxFit.cover,
-                                  width: 60,
-                                  height: 60,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    song.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  Text(
-                                    song.artist,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(color: Colors.grey[600]),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          ValueListenableBuilder(
-                            valueListenable: isSelectedPlayIndex,
-                            builder: (context, indexValue, _) {
-                              return IconButton(
-                                onPressed: () async {
-                                  if (indexValue == index) {
-                                    isSelectedPlayIndex.value = -1;
-                                    Future.delayed(
-                                        const Duration(milliseconds: 300),
-                                        () async => await player.pause());
-                                  } else {
-                                    isSelectedPlayIndex.value = index;
-                                    await player.setAudioSource(
-                                        AudioSource.uri(Uri.parse(song.url)));
-                                    await player.play();
-                                  }
-                                },
-                                icon: indexValue == index
-                                    ? const Icon(Icons.pause)
-                                    : const Icon(Icons.play_arrow),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          );
-        } else if (snapshot.hasError) {
-          return Text('${snapshot.error}');
-        }
-        return const CircularProgressIndicator();
-      },
-    );
   }
 
   Future<void> downloadAndTrimAudio(String url, BuildContext context) async {

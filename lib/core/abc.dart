@@ -70,3 +70,161 @@
 //
 //   return fullPath;
 // }
+/*
+///   Show Music Bottom Sheet
+void _showMusicBottomSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    isDismissible: true,
+    builder: (context) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.5),
+              spreadRadius: 5,
+              blurRadius: 7,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
+          child: _musicList(),
+        ),
+      );
+    },
+  );
+}
+
+///   Show Music List
+Widget _musicList() {
+  return FutureBuilder<List<Song>>(
+    future: fetchSongs(),
+    builder: (context, snapshot) {
+      if (snapshot.hasData) {
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const AlwaysScrollableScrollPhysics(),
+          itemCount: snapshot.data!.length,
+          itemBuilder: (context, index) {
+            final song = snapshot.data![index];
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: InkWell(
+                onTap: () async {
+                  String videoPath = widget.file.path;
+                  String audioUrl = song.url;
+                  Map<String, dynamic> map = {
+                    "title": song.title,
+                    "artist": song.artist,
+                    "artwork": song.artwork,
+                    "url": song.url,
+                    "id": song.id
+                  };
+                  print(" Map:- $map");
+                  *//*print("Audio $audioUrl");
+                    mergeAudioAndVideo(videoPath, audioUrl).then((outputPath) {
+                      print('Merged video saved at $outputPath');
+                    }).catchError((error) {
+                      print('Error: $error');
+                    });*//*
+                  Navigator.push(context,MaterialPageRoute(builder: (context) => AudioTrimmerViewDemo(song: map,),));
+                  // downloadAndTrimAudio(audioUrl, context);
+                  //Navigator.pop(context);
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.black),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.white,
+                        blurRadius: 8,
+                        offset: Offset(2, 2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(5),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(5),
+                              child: Image.network(
+                                song.artwork,
+                                fit: BoxFit.cover,
+                                width: 60,
+                                height: 60,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  song.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                Text(
+                                  song.artist,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        ValueListenableBuilder(
+                          valueListenable: isSelectedPlayIndex,
+                          builder: (context, indexValue, _) {
+                            return IconButton(
+                              onPressed: () async {
+                                if (indexValue == index) {
+                                  isSelectedPlayIndex.value = -1;
+                                  Future.delayed(
+                                      const Duration(milliseconds: 300),
+                                          () async => await player.pause());
+                                } else {
+                                  isSelectedPlayIndex.value = index;
+                                  await player.setAudioSource(
+                                      AudioSource.uri(Uri.parse(song.url)));
+                                  await player.play();
+                                }
+                              },
+                              icon: indexValue == index
+                                  ? const Icon(Icons.pause)
+                                  : const Icon(Icons.play_arrow),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      } else if (snapshot.hasError) {
+        return Text('${snapshot.error}');
+      }
+      return const CircularProgressIndicator();
+    },
+  );
+}*/
