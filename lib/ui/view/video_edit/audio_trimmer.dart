@@ -20,7 +20,7 @@ class AudioTrimmerViewDemo extends StatefulWidget {
 
 class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
   final Trimmer _trimmer = Trimmer();
-  bool _isPlaying = false;
+  bool isPlaying = false;
   ValueNotifier<bool> isPlay = ValueNotifier<bool>(false);
   bool _progressVisibility = false;
   bool isLoading = false;
@@ -29,7 +29,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
   String? audioPath;
 
   double startValue = 0.0;
-  double endValue = 0.0;
+  double endValue = 30.0;
 
   Duration totalDuration = const Duration(seconds: 120);
   Duration startDuration = Duration.zero;
@@ -56,29 +56,13 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
       await audioFile.writeAsBytes(response.bodyBytes);
       print("audioFile :- $audioFile");
       await _trimmer.loadAudio(audioFile: audioFile);
+      await _trimmer.audioPlayer!.getDuration();
+      await _trimmer.audioPlayer!.getCurrentPosition();
       setState(() {
         isLoading = false;
       });
     } else {
       throw Exception('Failed to download audio');
-    }
-  }
-
-  Future<void> _playPauseAudio() async {
-    if (_isPlaying) {
-      await _player.pause();
-      setState(() => _isPlaying = false);
-    } else {
-      await _player.setFilePath(audioPath!);
-      await _player.seek(Duration(seconds: startValue.toInt()));
-      await _player.play();
-      _player.positionStream.listen((position) {
-        if (position.inSeconds >= endValue) {
-          _player.pause();
-          setState(() => _isPlaying = false);
-        }
-      });
-      setState(() => _isPlaying = true);
     }
   }
 
@@ -95,16 +79,13 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
     FFmpegKit.execute(command).then((session) async {
       final returnCode = await session.getReturnCode();
       if (ReturnCode.isSuccess(returnCode)) {
+        print("Success");
         setState(() {
           _progressVisibility = false;
         });
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VideoEditor(audio: File(outputPath), file: widget.file),
-          ),
-        );
+        Navigator.push(context,MaterialPageRoute(builder: (context) => VideoEditor(audio: File(outputPath), file: widget.file),),);
       } else {
+        print("Failed");
         setState(() {
           _progressVisibility = false;
         });
@@ -225,7 +206,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                   },
                   onChangePlaybackState: (value) {
                     if (mounted) {
-                      setState(() => _isPlaying = value);
+                      setState(() => isPlaying = value);
                     }
                   },
                 ),
@@ -233,16 +214,15 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                   valueListenable: isPlay,
                   builder: (context, isPlaying, _) {
                     return IconButton(
+                      iconSize: 50,
                       onPressed: () async {
                         try {
                           if (isPlaying) {
-                            await _player.pause();
+                            await _trimmer.audioPlayer?.pause();
                             isPlay.value = false;
                           } else {
                             isPlay.value = true;
-                            await _player.setFilePath(audioPath!);
-                            await _player.seek(Duration(seconds: startValue.toInt()));
-                            await _player.play();
+                            await _trimmer.audioPlaybackControl(startValue: startValue, endValue: endValue);
                           }
                         } catch (e) {
                           print('Error: $e');
@@ -264,6 +244,11 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
         ),
       ),
     );
+  }
+
+  Future<Duration?> d () {
+    print("Duration :- ${_trimmer.audioPlayer!.getDuration()}");
+    return _trimmer.audioPlayer!.getDuration();
   }
 }
 

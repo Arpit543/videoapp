@@ -35,7 +35,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
   final double height = 60;
   final AudioPlayer player = AudioPlayer();
   ValueNotifier<int> isSelectedPlayIndex = ValueNotifier(-1);
-  ValueNotifier<bool> isMuted = ValueNotifier(false);
+  ValueNotifier<bool> isMuted = ValueNotifier(true);
   FirebaseUpload firebaseUpload = FirebaseUpload();
 
   late final VideoEditorController _controller = VideoEditorController.file(
@@ -48,15 +48,14 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
   @override
   void initState() {
     super.initState();
-    fetchSongs();
-    _controller.initialize(aspectRatio: 9 / 16).then((_) {
+   /* _controller.initialize(aspectRatio: 9 / 16).then((_) {
       setState(() {});
       _controller.video.setVolume(1.0);
       isMuted.value = true;
     }).catchError((error) {
       Navigator.pop(context);
-    }, test: (e) => e is VideoMinDurationError);
-   /* _controller.initialize(aspectRatio: 9 / 16).then((_) {
+    }, test: (e) => e is VideoMinDurationError);*/
+    _controller.initialize(aspectRatio: 9 / 16).then((_) {
       setState(() {
         _controller.video.setVolume(1.0);
         if (widget.audio != null && widget.audio!.path.isNotEmpty) {
@@ -73,7 +72,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     }).catchError((error) {
       Navigator.pop(context);
       print('Error initializing video controller: $error');
-    }, test: (e) => e is VideoMinDurationError);*/
+    }, test: (e) => e is VideoMinDurationError);
   }
 
   @override
@@ -205,12 +204,12 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
 
   @override
   void dispose() async {
-    super.dispose();
     player.dispose();
     _exportingProgress.dispose();
     _isExporting.dispose();
     _controller.dispose();
     ExportService.dispose();
+    super.dispose();
   }
 
   ///   Export Video [_exportVideo]
@@ -321,7 +320,8 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                     Duration duration = _controller.startTrim;
                     Duration duration1 = _controller.endTrim;
                     Duration totalDuration = calculateTotalDuration("$duration", "$duration1");
-                    Get.to(FindSong(file: widget.file,duration: totalDuration)); },
+                    Get.to(FindSong(file: widget.file,duration: totalDuration));
+                    },
                   icon: const Icon(Icons.music_note, size: 30),
                 ),
               ),
@@ -440,117 +440,6 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
         ),
       ),
     ];
-  }
-
-
-  ///   To get Song from URL [fetchSongs]
-  Future<List<Song>> fetchSongs() async {
-    final String response =
-        await rootBundle.loadString('assets/json/music.json');
-    final List<dynamic> jsonList = jsonDecode(response);
-    return jsonList.map((json) => Song.fromJson(json)).toList();
-  }
-
-  ///   Merge Audio and Video [mergeAudioAndVideo] and [getUniqueFilePath]
-  Future<String> mergeAudioAndVideo(String videoPath, String audioUrl) async {
-    try {
-      final Directory appDir = await getApplicationDocumentsDirectory();
-      final String audioPath = '${appDir.path}/temp_audio.mp3';
-
-      final http.Response response = await http.get(Uri.parse(audioUrl));
-      if (response.statusCode == 200) {
-        final File audioFile = File(audioPath);
-        await audioFile.writeAsBytes(response.bodyBytes);
-        print("Audio File :- ${audioFile.writeAsBytes(response.bodyBytes)}");
-      } else {
-        throw Exception('Failed to download audio');
-      }
-
-      final Directory? externalDir = await getExternalStorageDirectory();
-      final String basePath =
-          '${externalDir?.parent.parent.parent.parent.path}/Download/';
-
-      String outputPath = getUniqueFilePath(basePath, "output", "mp4");
-
-      final File videoFile = File(videoPath);
-      final File audioFile = File(audioPath);
-
-      if (!await videoFile.exists()) {
-        throw Exception('Video file does not exist at: $videoPath');
-      }
-      if (!await audioFile.exists()) {
-        throw Exception('Audio file does not exist at: $audioPath');
-      }
-
-      print("Video Path: $videoPath");
-      print("Audio Path: $audioPath");
-      print("Output Path: $outputPath");
-
-      final String command =
-          "-y -i $videoPath -i $audioPath -map 0:v -map 1:a -c:v copy -shortest $outputPath";
-
-      await FFmpegKit.execute(command).then((session) async {
-        final returnCode = await session.getReturnCode();
-        final log = await session.getAllLogs();
-        log.forEach((log) {
-          print(log.getMessage());
-        });
-
-        if (ReturnCode.isSuccess(returnCode)) {
-          return outputPath;
-        } else if (ReturnCode.isCancel(returnCode)) {
-          throw Exception('FFmpeg command was canceled');
-        } else {
-          throw Exception('FFmpeg command failed');
-        }
-      });
-
-      print("Output Path: $outputPath");
-      return outputPath;
-    } catch (e) {
-      throw Exception('Error merging audio and video: $e');
-    }
-  }
-
-  String getUniqueFilePath(String basePath, String fileName, String extension) {
-    int count = 0;
-    String fullPath = '$basePath$fileName.$extension';
-
-    while (File(fullPath).existsSync()) {
-      count++;
-      fullPath = '$basePath$fileName$count.$extension';
-    }
-
-    return fullPath;
-  }
-
-  Future<void> downloadAndTrimAudio(String url, BuildContext context) async {
-    try {
-      final Directory appDir = await getApplicationDocumentsDirectory();
-      final String audioPath = '${appDir.path}/_audio.mp3';
-
-      print("App directory: ${appDir.path}");
-
-      final http.Response response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final File audioFile = File(audioPath);
-        await audioFile.writeAsBytes(response.bodyBytes).then((_) {
-          print("Audio File saved at: $audioPath");
-          /*  Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AudioTrimmerView(file: audioFile)),
-          );*/
-        }).catchError((error) {
-          print("File write error: ${error.toString()}");
-        });
-      } else {
-        print(
-            "Failed to download audio: ${response.statusCode} - ${response.body}");
-        throw Exception('Failed to download audio');
-      }
-    } catch (e) {
-      print("Error: ${e.toString()}");
-    }
   }
 
   ///Create Covers From Video [_coverSelection]

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:story_view/story_view.dart';
 import 'package:video_player/video_player.dart';
+import 'package:chewie/chewie.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
 
@@ -15,6 +16,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
   final StoryController storyController = StoryController();
   final FirebaseUpload upload = FirebaseUpload();
   VideoPlayerController? _videoController;
+  ChewieController? _chewieController;
   late Future<List<String>> _dataFutureImages;
   late List<StoryItem> storyData;
 
@@ -34,7 +36,6 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
 
   void getInitializeList(List<String> storyItems) {
     for (var item in storyItems) {
-      print("URLS : $item");
       if (item.startsWith('http') && (item.contains('.jpg') || item.contains('.png') || item.contains('.jpeg'))) {
         storyData.add(
           StoryItem.pageImage(
@@ -50,18 +51,23 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
       } else if (item.startsWith('http') && item.contains('.mp4')) {
         _videoController = VideoPlayerController.networkUrl(Uri.parse(item))
           ..initialize().then((_) {
-            setState(() {});
+            if (_videoController!.value.isInitialized) {
+              setState(() {
+                _chewieController = ChewieController(
+                  videoPlayerController: _videoController!,
+                  autoPlay: true,
+                  looping: false,
+                );
+              });
+            }
+          }).catchError((error) {
+            print("Error initializing video: $error");
           });
 
-        VideoPlayer(_videoController!);
         storyData.add(
           StoryItem.pageVideo(
             item,
             controller: storyController,
-            caption: const Text(
-              "Enjoy the video!",
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
           ),
         );
       } else {
@@ -83,13 +89,14 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
   void dispose() {
     storyController.dispose();
     _videoController?.dispose();
+    _chewieController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Better contrast for stories
+      backgroundColor: Colors.black,
       body: FutureBuilder<List<String>>(
         future: _dataFutureImages,
         builder: (context, snapshot) {
@@ -116,7 +123,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
             progressPosition: ProgressPosition.top,
             indicatorColor: Colors.white,
             indicatorHeight: IndicatorHeight.large,
-            indicatorOuterPadding: const EdgeInsets.all(10), // Space for better view
+            indicatorOuterPadding: const EdgeInsets.all(10),
             indicatorForegroundColor: const Color(0xff6EA9FF),
             onStoryShow: (storyItem, index) {
               print("Showing story $index");
