@@ -29,11 +29,8 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
   String? audioPath;
 
   double startValue = 0.0;
-  double endValue = 30.0;
-
-  Duration totalDuration = const Duration(seconds: 120);
-  Duration startDuration = Duration.zero;
-  Duration endDuration = const Duration(seconds: 320);
+  double endValue = 30.0; // Initialize to total duration
+  Duration totalDuration = Duration.zero; // For total duration
 
   @override
   void initState() {
@@ -54,11 +51,15 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
     if (response.statusCode == 200) {
       final File audioFile = File(audioPath!);
       await audioFile.writeAsBytes(response.bodyBytes);
-      print("audioFile :- $audioFile");
       await _trimmer.loadAudio(audioFile: audioFile);
-      await _trimmer.audioPlayer!.getDuration();
-      await _trimmer.audioPlayer!.getCurrentPosition();
+
+      // Get the total duration
+      Duration? duration = await _trimmer.audioPlayer!.getDuration();
+      print("Total Duration: ${duration?.inSeconds} seconds");
+
       setState(() {
+        totalDuration = duration!;
+        endValue = totalDuration.inSeconds.toDouble(); // Set endValue to total duration
         isLoading = false;
       });
     } else {
@@ -79,17 +80,16 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
     FFmpegKit.execute(command).then((session) async {
       final returnCode = await session.getReturnCode();
       if (ReturnCode.isSuccess(returnCode)) {
-        print("Success");
-        setState(() {
-          _progressVisibility = false;
-        });
-        Navigator.push(context,MaterialPageRoute(builder: (context) => VideoEditor(audio: File(outputPath), file: widget.file),),);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => VideoEditor(audio: File(outputPath), file: widget.file)),
+        );
       } else {
-        print("Failed");
-        setState(() {
-          _progressVisibility = false;
-        });
+        print("Failed to trim audio");
       }
+      setState(() {
+        _progressVisibility = false;
+      });
     });
   }
 
@@ -122,8 +122,8 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
         ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator()) :
-      SingleChildScrollView(
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Center(
           child: Container(
@@ -176,7 +176,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                   backgroundColor: Colors.teal,
                   barColor: Colors.yellow,
                   showDuration: true,
-                  maxAudioLength: const Duration(seconds: 30),
+                  maxAudioLength: const Duration(seconds: 320),
                   editorProperties: const TrimEditorProperties(
                     circleSize: 5.0,
                     circleSizeOnDrag: 8.0,
@@ -192,18 +192,16 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                   allowAudioSelection: true,
                   paddingFraction: 2.0,
                   areaProperties: const FixedTrimAreaProperties(),
-                  onChangeStart: (value) async {
-
-                    debugPrint('Change Start Triggered123: ${await getDurationAsDouble()}');
-                    debugPrint('Change Start Triggered: $value');
-                    setState(() async {
-                      startValue = value;
+                  onChangeStart: (value) {
+                    setState(() {
+                      startValue = (value / 100) * totalDuration.inSeconds; // Scale to total duration
+                      print("Start Value: $startValue");
                     });
                   },
                   onChangeEnd: (value) {
-                    debugPrint('Change End Triggered: $value');
                     setState(() {
-                      endValue = value;
+                      endValue = (value / 100) * totalDuration.inSeconds; // Scale to total duration
+                      print("End Value: $endValue");
                     });
                   },
                   onChangePlaybackState: (value) {
@@ -247,8 +245,11 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
       ),
     );
   }
+}
 
-  Future<Duration?> d () async {
+
+/*
+Future<Duration?> d () async {
     print("Duration :- ${_trimmer.audioPlayer!.getDuration()}");
     return await _trimmer.audioPlayer!.getDuration();
   }
@@ -261,5 +262,4 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
       return null;
     }
   }
-}
-
+*/
