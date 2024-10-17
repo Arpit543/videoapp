@@ -5,10 +5,12 @@ import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:videoapp/ui/view/video_edit/audio_trimmer.dart';
+import 'package:videoapp/ui/view/video_edit/wave.dart';
 import '../../../core/model/song_model.dart';
 
 class FindSong extends StatefulWidget {
@@ -117,14 +119,7 @@ class _FindSongState extends State<FindSong> {
                     */
 
                   String audioUrl = song.url;
-                  Map<String, dynamic> map = {
-                    "id": song.id,
-                    "title": song.title,
-                    "artist": song.artist,
-                    "artwork": song.artwork,
-                    "url": song.url,
-                  };
-                  downloadAndTrimAudio(audioUrl, map, context);
+                  downloadAndTrimAudio(audioUrl, song, context);
 
                   //Navigator.pop(context);
                /*   Map<String, dynamic> map = {
@@ -291,7 +286,7 @@ class _FindSongState extends State<FindSong> {
   }
 
   /// Trim and Navigate [downloadAndTrimAudio]
-  Future<void> downloadAndTrimAudio(String url, Map<String, dynamic> map, BuildContext context) async {
+  Future<void> downloadAndTrimAudio(String url, Song map, BuildContext context) async {
     try {
       final Directory appDir = await getApplicationDocumentsDirectory();
       final String audioPath = '${appDir.path}/_audio.mp3';
@@ -301,12 +296,13 @@ class _FindSongState extends State<FindSong> {
       final http.Response response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final File audioFile = File(audioPath);
-        await audioFile.writeAsBytes(response.bodyBytes).then((_) {
+        audioFile.writeAsBytes(response.bodyBytes).then((_) {
           print("Audio File saved at: $audioPath");
-          Navigator.push(context,MaterialPageRoute(builder: (context) => AudioTrimmerViewDemo(file: widget.file, song: map)),);
+          Get.off(WaveAudio(file: audioFile, song: map,duration: widget.duration));
         }).catchError((error) {
           print("File write error: ${error.toString()}");
         });
+
       } else {
         print(
             "Failed to download audio: ${response.statusCode} - ${response.body}");

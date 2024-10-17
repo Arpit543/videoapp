@@ -4,6 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
 import 'package:videoapp/ui/view/splash_screen.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
@@ -182,7 +183,7 @@ class FirebaseUpload {
         await databaseMethod.addUser(user.uid, userInfo);
 
         showSnackBar(message: 'You Have Been Registered Successfully!',context: context,isError: false,);
-        Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const Login()), (Route<dynamic> route) => false,);
+        Get.offAll(const Login());
 
         nameController.clear();
         emailController.clear();
@@ -218,7 +219,7 @@ class FirebaseUpload {
             await Constants.setString(Constants.userId, event.snapshot.child("id").value.toString());
             showSnackBar(message: 'You Have Been Logged In Successfully!',context: context,isError: false,);
 
-            Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const HomeScreen()),(Route<dynamic> route) => false,);
+            Get.offAll(const HomeScreen());
           });
         } else {
           throw Exception("User data not found in Realtime Database");
@@ -246,7 +247,7 @@ class FirebaseUpload {
     try {
       await Constants.clear();
       showSnackBar(message: 'You Have Been Logged Out Successfully!',context: context,isError: false);
-      Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const SplashScreen()), (route) => false);
+      Get.offAll(const SplashScreen());
     } catch (e) {
       if (kDebugMode) {
         print('Error during logout: $e');

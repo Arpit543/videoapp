@@ -16,7 +16,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
   final StoryController storyController = StoryController();
   final FirebaseUpload upload = FirebaseUpload();
   VideoPlayerController? _videoController;
-  ChewieController? _chewieController;
+  // ChewieController? _chewieController;
   late Future<List<String>> _dataFutureImages;
   late List<StoryItem> storyData;
 
@@ -49,21 +49,17 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
           ),
         );
       } else if (item.startsWith('http') && item.contains('.mp4')) {
-        _videoController = VideoPlayerController.networkUrl(Uri.parse(item))
+        /*_videoController = VideoPlayerController.networkUrl(Uri.parse(item))
           ..initialize().then((_) {
-            if (_videoController!.value.isInitialized) {
               setState(() {
-                _chewieController = ChewieController(
-                  videoPlayerController: _videoController!,
+                  videoPlayerController: _videoController,
                   autoPlay: true,
                   looping: false,
-                );
               });
-            }
           }).catchError((error) {
             print("Error initializing video: $error");
           });
-
+*/
         storyData.add(
           StoryItem.pageVideo(
             item,
@@ -89,7 +85,6 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
   void dispose() {
     storyController.dispose();
     _videoController?.dispose();
-    _chewieController?.dispose();
     super.dispose();
   }
 

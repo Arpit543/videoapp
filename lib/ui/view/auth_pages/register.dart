@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/auth_pages/login.dart';
 import 'package:videoapp/ui/widget/common_button.dart';
@@ -149,13 +150,7 @@ class _RegisterState extends State<Register> {
                 const SizedBox(height: 20),
                 GestureDetector(
                   onTap: () {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const Login(),
-                      ),
-                          (route) => false,
-                    );
+                    Get.offAll(const Login());
                   },
                   child: const Center(
                     child: Text(

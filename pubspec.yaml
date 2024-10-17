@@ -59,6 +59,9 @@ dependencies:
   easy_audio_trimmer: ^1.0.2+4
   smooth_page_indicator: ^1.2.0+3
   chewie: ^1.8.5
+  flutter_audio_trimmer: ^0.0.5
+  flutter_audio_waveforms: ^1.2.1+8
+  audio_waveforms: ^1.1.0
 
 flutter_audio_trimmer:
   # When depending on this package from a real application you should use:

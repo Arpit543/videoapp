@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/auth_pages/register.dart';
 import 'package:videoapp/ui/widget/common_button.dart';
@@ -135,10 +136,7 @@ class _LoginState extends State<Login> {
                 const SizedBox(height: 20),
                 GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Register()),
-                    );
+                    Get.to(const Register());
                   },
                   child: const Center(
                     child: Text(

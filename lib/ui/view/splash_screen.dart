@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:videoapp/core/constants.dart';
@@ -56,8 +57,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _navigateToNextScreen() {
     final isLoggedIn = Constants.getBool(Constants.isLogin) == true;
-
-    Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => isLoggedIn ? const TabScreen() : const Login(),),(route) => false,);
+    Get.offAll(isLoggedIn ? const TabScreen() : const Login());
   }
 
   @override

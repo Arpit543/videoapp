@@ -6,13 +6,15 @@ import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:easy_audio_trimmer/easy_audio_trimmer.dart';
+import 'package:videoapp/core/model/song_model.dart';
 import 'package:videoapp/ui/view/video_edit/video_editor.dart';
 
 class AudioTrimmerViewDemo extends StatefulWidget {
-  final Map<String, dynamic> song;
+  final Song song;
   final File file;
+  final Duration duration;
 
-  const AudioTrimmerViewDemo({required this.song, super.key, required this.file});
+  const AudioTrimmerViewDemo({required this.song, super.key, required this.file, required this.duration});
 
   @override
   State<AudioTrimmerViewDemo> createState() => _AudioTrimmerViewDemoState();
@@ -20,57 +22,53 @@ class AudioTrimmerViewDemo extends StatefulWidget {
 
 class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
   final Trimmer _trimmer = Trimmer();
-  bool isPlaying = false;
-  ValueNotifier<bool> isPlay = ValueNotifier<bool>(false);
   bool _progressVisibility = false;
   bool isLoading = false;
-  Map<String, dynamic> data = {};
+  Song? data;
   final AudioPlayer _player = AudioPlayer();
-  String? audioPath;
+  String audioPath = "";
 
   double startValue = 0.0;
-  double endValue = 30.0; // Initialize to total duration
-  Duration totalDuration = Duration.zero; // For total duration
+  double endValue = 30.0;
+  Duration totalDuration = Duration.zero;
 
   @override
   void initState() {
-    super.initState();
     data = widget.song;
-    _loadAudio();
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      _loadAudio();
+    },);
   }
 
   Future<void> _loadAudio() async {
     setState(() {
       isLoading = true;
     });
-
-    final Directory appDir = await getApplicationDocumentsDirectory();
-    audioPath = '${appDir.path}/temp_audio.mp3';
-
-    final http.Response response = await http.get(Uri.parse(data['url']));
-    if (response.statusCode == 200) {
-      final File audioFile = File(audioPath!);
-      await audioFile.writeAsBytes(response.bodyBytes);
-      await _trimmer.loadAudio(audioFile: audioFile);
+    print("Artwork : ${data!.artwork}");
+      await _trimmer.loadAudio(audioFile: widget.file);
 
       // Get the total duration
       Duration? duration = await _trimmer.audioPlayer!.getDuration();
       print("Total Duration: ${duration?.inSeconds} seconds");
 
+      startValue = 0.0;
+      endValue = 30;//(duration!.inSeconds > widget.duration.inSeconds ? startValue + widget.duration.inSeconds : duration!.inSeconds).toDouble();
       setState(() {
         totalDuration = duration!;
         endValue = totalDuration.inSeconds.toDouble(); // Set endValue to total duration
         isLoading = false;
       });
-    } else {
-      throw Exception('Failed to download audio');
-    }
+
+      // Start playing the audio as soon as it's loaded
+      await _trimmer.audioPlaybackControl(startValue: startValue, endValue: endValue);
   }
 
   Future<void> _saveAudio() async {
     setState(() {
       _progressVisibility = true;
     });
+
 
     final Directory appDir = await getApplicationDocumentsDirectory();
     final String outputPath = '${appDir.path}/trimmed_audio_${DateTime.now().millisecondsSinceEpoch}.mp3';
@@ -80,10 +78,6 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
     FFmpegKit.execute(command).then((session) async {
       final returnCode = await session.getReturnCode();
       if (ReturnCode.isSuccess(returnCode)) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => VideoEditor(audio: File(outputPath), file: widget.file)),
-        );
       } else {
         print("Failed to trim audio");
       }
@@ -95,7 +89,11 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
 
   @override
   void dispose() {
-    _player.dispose();
+    if(_trimmer.audioPlayer != null) {
+      _trimmer.audioPlayer!.pause();
+      _trimmer.audioPlayer!.dispose();
+    }
+    _trimmer.dispose();
     super.dispose();
   }
 
@@ -150,7 +148,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                         ),
                         child: Center(
                           child: Image.network(
-                            data['artwork'],
+                            data!.artwork,
                             height: 150,
                             width: 150,
                             filterQuality: FilterQuality.high,
@@ -159,11 +157,11 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                       ),
                       Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Text(data['artist']),
+                        child: Text(data!.artist),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Text(data['title']),
+                        child: Text(data!.title),
                       ),
                     ],
                   ),
@@ -176,7 +174,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                   backgroundColor: Colors.teal,
                   barColor: Colors.yellow,
                   showDuration: true,
-                  maxAudioLength: const Duration(seconds: 320),
+                  maxAudioLength: const Duration(seconds: 60),
                   editorProperties: const TrimEditorProperties(
                     circleSize: 5.0,
                     circleSizeOnDrag: 8.0,
@@ -194,42 +192,23 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                   areaProperties: const FixedTrimAreaProperties(),
                   onChangeStart: (value) {
                     setState(() {
-                      startValue = (value / 100) * totalDuration.inSeconds; // Scale to total duration
+                      // value is a percentage (0 to 100), so we scale it to totalDuration
+                      startValue = (value / 100) * totalDuration.inSeconds;
                       print("Start Value: $startValue");
                     });
+
+                    // Restart audio playback from updated startValue
+                    _trimmer.audioPlaybackControl(startValue: startValue, endValue: endValue);
                   },
                   onChangeEnd: (value) {
                     setState(() {
-                      endValue = (value / 100) * totalDuration.inSeconds; // Scale to total duration
+                      // value is a percentage (0 to 100), so we scale it to totalDuration
+                      endValue = (value / 100) * totalDuration.inSeconds;
                       print("End Value: $endValue");
                     });
-                  },
-                  onChangePlaybackState: (value) {
-                    if (mounted) {
-                      setState(() => isPlaying = value);
-                    }
-                  },
-                ),
-                ValueListenableBuilder<bool>(
-                  valueListenable: isPlay,
-                  builder: (context, isPlaying, _) {
-                    return IconButton(
-                      iconSize: 50,
-                      onPressed: () async {
-                        try {
-                          if (isPlaying) {
-                            await _trimmer.audioPlayer?.pause();
-                            isPlay.value = false;
-                          } else {
-                            isPlay.value = true;
-                            await _trimmer.audioPlaybackControl(startValue: startValue, endValue: endValue);
-                          }
-                        } catch (e) {
-                          print('Error: $e');
-                        }
-                      },
-                      icon: isPlaying ? const Icon(Icons.pause) : const Icon(Icons.play_arrow),
-                    );
+
+                    // Restart audio playback from updated startValue
+                    _trimmer.audioPlaybackControl(startValue: startValue, endValue: endValue);
                   },
                 ),
                 Visibility(
@@ -246,20 +225,3 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
     );
   }
 }
-
-
-/*
-Future<Duration?> d () async {
-    print("Duration :- ${_trimmer.audioPlayer!.getDuration()}");
-    return await _trimmer.audioPlayer!.getDuration();
-  }
-
-  Future<double?> getDurationAsDouble() async {
-    Duration? duration = await d();
-    if (duration != null) {
-      return duration.inSeconds.toDouble();
-    } else {
-      return null;
-    }
-  }
-*/

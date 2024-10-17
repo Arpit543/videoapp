@@ -55,24 +55,26 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     }).catchError((error) {
       Navigator.pop(context);
     }, test: (e) => e is VideoMinDurationError);*/
-    _controller.initialize(aspectRatio: 9 / 16).then((_) {
-      setState(() {
-        _controller.video.setVolume(1.0);
-        if (widget.audio != null && widget.audio!.path.isNotEmpty) {
-          player.setFilePath(widget.audio!.path).then((_) {
-            player.play();
-            isMuted.value = true;
-          }).catchError((error) {
-            print('Error setting file path: $error');
-          });
-        } else {
-          print('Invalid audio path: ${widget.audio?.path}');
-        }
-      });
-    }).catchError((error) {
-      Navigator.pop(context);
-      print('Error initializing video controller: $error');
-    }, test: (e) => e is VideoMinDurationError);
+    WidgetsBinding.instance.addPostFrameCallback((_){
+      _controller.initialize(aspectRatio: 9 / 16).then((_) {
+        setState(() {
+          _controller.video.setVolume(1.0);
+          if (widget.audio != null && widget.audio!.path.isNotEmpty) {
+            player.setFilePath(widget.audio!.path).then((_) {
+              player.play();
+              isMuted.value = true;
+            }).catchError((error) {
+              print('Error setting file path: $error');
+            });
+          } else {
+            print('Invalid audio path: ${widget.audio?.path}');
+          }
+        });
+      }).catchError((error) {
+        Navigator.pop(context);
+        print('Error initializing video controller: $error');
+      }, test: (e) => e is VideoMinDurationError);
+    });
   }
 
   @override
