@@ -192,9 +192,11 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                   allowAudioSelection: true,
                   paddingFraction: 2.0,
                   areaProperties: const FixedTrimAreaProperties(),
-                  onChangeStart: (value) {
+                  onChangeStart: (value) async {
+
+                    debugPrint('Change Start Triggered123: ${await getDurationAsDouble()}');
                     debugPrint('Change Start Triggered: $value');
-                    setState(() {
+                    setState(() async {
                       startValue = value;
                     });
                   },
@@ -246,9 +248,18 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
     );
   }
 
-  Future<Duration?> d () {
+  Future<Duration?> d () async {
     print("Duration :- ${_trimmer.audioPlayer!.getDuration()}");
-    return _trimmer.audioPlayer!.getDuration();
+    return await _trimmer.audioPlayer!.getDuration();
+  }
+
+  Future<double?> getDurationAsDouble() async {
+    Duration? duration = await d();
+    if (duration != null) {
+      return duration.inSeconds.toDouble();
+    } else {
+      return null;
+    }
   }
 }
 
