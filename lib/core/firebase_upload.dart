@@ -35,7 +35,8 @@ class FirebaseUpload {
       storageRef.putFile(file);
       showSnackBar(message: 'File Edited successfully',context: context,isError: false);
     } catch (e) {
-      showSnackBar(message: 'Unable to Edit File', context: context, isError: true);
+      print("Unable to Edit File ${e.toString()}");
+      showSnackBar(message: 'Unable to Edit File $e', context: context, isError: true);
     }
   }
 

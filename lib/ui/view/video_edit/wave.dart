@@ -24,7 +24,7 @@ class WaveAudio extends StatefulWidget {
 
 class _WaveAudioState extends State<WaveAudio> {
   final Trimmer _trimmer = Trimmer();
-  bool _progressVisibility = false;
+  final bool _progressVisibility = false;
   bool isLoading = false;
   Song? data;
   final AudioPlayer _player = AudioPlayer();
@@ -34,13 +34,12 @@ class _WaveAudioState extends State<WaveAudio> {
   double endValue = 30.0;
   Duration totalDuration = Duration.zero;
 
-  double _containerPosition = 0;
-  double _containerWidth = 30;
-  double _minPosition = 0.0;
-  double _maxPosition = 300.0;
+  final double _containerPosition = 0;
+  final double _containerWidth = 30;
+  final double minPosition = 0.0;
+  double maxPosition = 300.0;
 
-  final PlayerController controller =
-      PlayerController(); // Controller for waveform
+  final PlayerController controller = PlayerController();
 
   @override
   void initState() {
@@ -49,7 +48,7 @@ class _WaveAudioState extends State<WaveAudio> {
     WidgetsBinding.instance.addPostFrameCallback(
       (timeStamp) {
         _loadAudio();
-        _maxPosition = Get.width - 26;
+        maxPosition = Get.width - 26;
       },
     );
   }
@@ -59,42 +58,36 @@ class _WaveAudioState extends State<WaveAudio> {
       isLoading = true;
     });
 
-    await controller.preparePlayer(
-        path: widget.file.path, // Set the URL as the audio source
-        shouldExtractWaveform: true,
-        volume: 1.0 // This flag extracts the waveform
-        );
+    await controller.preparePlayer(path: widget.file.path, shouldExtractWaveform: true, volume: 1.0);
 
     controller.addListener(() async {
       int duration = await controller.getDuration();
+      if (totalDuration == Duration.zero) {
+        totalDuration = Duration(milliseconds: duration);
+        print("Total music length: ${totalDuration.inSeconds} seconds");
+      }
+
       if (duration == controller.maxDuration) {
         controller.seekTo(0);
       }
+
       int startPosition = 1000;
       int endPosition = 30000;
-      // if(duration > _containerPosition) {
-      //   double persent = 100 * _containerPosition / Get.width;
-      //   int totalmilis = controller.maxDuration;
-      //   double currentmilis = totalmilis * persent / 100;
-      //   print(currentmilis);
-      //   // controller.pausePlayer();
-      //   controller.seekTo(currentmilis.toInt());
-      // }
+
       if (duration > _containerPosition) {
         double percent = 100 * _containerPosition / Get.width;
         int totalMillis = controller.maxDuration;
         double currentMillis = totalMillis * percent;
 
-        print(currentMillis);
+        print("Current playback position: ${currentMillis.toInt()} ms");
 
         if (currentMillis >= endPosition) {
-          // If the current position exceeds the end of the range, reset to the start of the range
           controller.seekTo(startPosition);
+          print("if $startPosition");
         } else if (currentMillis < startPosition) {
-          // Ensure the playback doesn't start before the range
+          print("else $startPosition");
           controller.seekTo(startPosition);
         } else {
-          // Normal playback within the range
           controller.seekTo(currentMillis.toInt());
         }
       }
@@ -199,20 +192,16 @@ class _WaveAudioState extends State<WaveAudio> {
                         ),
                         child: Stack(
                           children: [
-                            Container(
+                            SizedBox(
                               width: Get.width - 50,
                               child: AudioFileWaveforms(
-                                size: Size(
-                                    MediaQuery.of(context).size.width - 20,
-                                    200),
+                                size: Size(MediaQuery.of(context).size.width - 20,200),
                                 playerController: controller,
                                 waveformType: WaveformType.long,
-                                // Set the waveform type
                                 enableSeekGesture: true,
-                                animationDuration:
-                                    const Duration(milliseconds: 100),
+                                animationDuration: const Duration(milliseconds: 10),
                                 continuousWaveform: true,
-                                // Enables seek on waveform tap
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                                 playerWaveStyle: const PlayerWaveStyle(
                                   scaleFactor: 60,
                                   fixedWaveColor: Colors.black,
@@ -241,8 +230,7 @@ class _WaveAudioState extends State<WaveAudio> {
                       Visibility(
                         visible: _progressVisibility,
                         child: LinearProgressIndicator(
-                          backgroundColor:
-                              Theme.of(context).primaryColor.withOpacity(0.5),
+                          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.5),
                         ),
                       ),
                     ],

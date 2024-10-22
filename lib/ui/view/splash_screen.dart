@@ -4,7 +4,6 @@ import 'package:lottie/lottie.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:videoapp/core/constants.dart';
 import 'package:videoapp/ui/view/auth_pages/login.dart';
-import 'package:videoapp/ui/view/home_screen.dart';
 
 import '../widget/tab.dart';
 

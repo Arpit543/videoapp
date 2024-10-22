@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pro_image_editor/models/editor_callbacks/pro_image_editor_callbacks.dart';
 import 'package:pro_image_editor/models/editor_configs/pro_image_editor_configs.dart';
@@ -60,7 +61,7 @@ class _ImageEditorState extends State<ImageEditor> {
                   setState(() {
                     _isUploading = false;
                   });
-                  Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const HomeScreen(),),(route) => false,);
+                  Get.offAll(const HomeScreen());
                 },
               ),
             ),

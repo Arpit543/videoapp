@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:video_editor/video_editor.dart';
 import 'package:video_player/video_player.dart';
@@ -39,7 +40,7 @@ class _FileViewState extends State<FileView> {
       await _controller!.dispose();
     }
 
-    if (widget.storyItems[index].type == StoryType.Video) {
+    if (widget.storyItems[index].type == StoryType.video) {
       setState(() {
         isLoadingVideo = true;
       });
@@ -95,7 +96,7 @@ class _FileViewState extends State<FileView> {
                 controller: pageController,
                 itemCount: widget.storyItems.length,
                 onPageChanged: (index) {
-                  if (widget.storyItems[index].type == StoryType.Video) {
+                  if (widget.storyItems[index].type == StoryType.video) {
                     _initializeVideoController(index);
                   } else {
                     setState(() {
@@ -154,7 +155,7 @@ class _FileViewState extends State<FileView> {
                     child: IconButton(
                       onPressed: () {
                         widget.storyItems.clear();
-                        Navigator.pop(context);
+                        Get.back();
                       },
                       icon: const Center(
                         child: Text(
@@ -263,10 +264,10 @@ class _FileViewState extends State<FileView> {
     for (var item in storyItems) {
       print("URLS : $item");
       if (item.story.contains('.jpg') || item.story.contains('.png') || item.story.contains('.jpeg')) {
-        Navigator.push(context,MaterialPageRoute(builder: (context) => ImageEditor(file: File(item.story)),),);
+        Get.to(ImageEditor(file: File(item.story)));
         break;
       } else if (item.story.contains('.mp4') || item.story.contains('.mov') || item.story.contains('.avi') || item.story.contains('.mp3') || item.story.contains('.mkv')) {
-        Navigator.push(context,MaterialPageRoute(builder: (context) => VideoEditor(file: File(item.story)),),);
+        Get.to(VideoEditor(file: File(item.story)));
         break;
       } else {
         showSnackBar(context: context, message: "Unsupported file type for editing: $item");
@@ -278,13 +279,13 @@ class _FileViewState extends State<FileView> {
   Widget customStoryView({required StoryTypeModel story}) {
     final File mediaFile = File(story.story);
     switch (story.type) {
-      case StoryType.Image:
+      case StoryType.image:
         return Image.file(
           mediaFile,
           fit: BoxFit.cover,
           width: MediaQuery.of(context).size.width,
         );
-      case StoryType.Video:
+      case StoryType.video:
         if (_controller != null && _controller!.value.isInitialized) {
           return isLoadingVideo
               ? const Center(child: CircularProgressIndicator())

@@ -1,9 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:story_view/story_view.dart';
 import 'package:video_player/video_player.dart';
-import 'package:chewie/chewie.dart';
 import 'package:videoapp/core/firebase_upload.dart';
-import 'package:videoapp/ui/view/home_screen.dart';
 
 class StoryViewScreen extends StatefulWidget {
   const StoryViewScreen({super.key});
@@ -16,23 +16,71 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
   final StoryController storyController = StoryController();
   final FirebaseUpload upload = FirebaseUpload();
   VideoPlayerController? _videoController;
-  // ChewieController? _chewieController;
   late Future<List<String>> _dataFutureImages;
   late List<StoryItem> storyData;
 
   @override
   void initState() {
     super.initState();
-    storyData = [];
     _dataFutureImages = upload.getStoryData();
-    _dataFutureImages.then((storyItems) {
-      setState(() {
-        getInitializeList(storyItems);
+    storyData = [];
+    WidgetsBinding.instance.addPostFrameCallback((_){
+      _dataFutureImages.then((storyItems) {
+        setState(() {
+          getInitializeList(storyItems);
+        });
+      }).catchError((error) {
+        if (kDebugMode) {
+          print("Error fetching story data: $error");
+        }
       });
-    }).catchError((error) {
-      print("Error fetching story data: $error");
     });
   }
+
+  /*void getInitializeList(List<String> storyItems) {
+    for (var item in storyItems) {
+      if (item.startsWith('http') && (item.contains('.jpg') || item.contains('.png') || item.contains('.jpeg'))) {
+        storyData.add(
+          StoryItem.pageImage(
+            url: item,
+            caption: const Text(
+              "A beautiful image",
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            controller: storyController,
+            imageFit: BoxFit.cover,
+          ),
+        );
+      } else if (item.startsWith('http') && item.contains('.mp4')) {
+        _videoController = VideoPlayerController.networkUrl(Uri.parse(item));
+        _videoController = VideoPlayerController.networkUrl(Uri.parse(item))
+          ..initialize().then((_) {
+            setState(() {});
+            setState(() {});
+          });
+
+        VideoPlayer(_videoController!);
+
+        storyData.add(
+          StoryItem.pageVideo(
+            item,
+            controller: storyController,
+          ),
+        );
+      } else {
+        storyData.add(
+          StoryItem.text(
+            title: item,
+            backgroundColor: Colors.blueAccent,
+            textStyle: const TextStyle(
+              fontSize: 24,
+              color: Colors.white,
+            ),
+          ),
+        );
+      }
+    }
+  }*/
 
   void getInitializeList(List<String> storyItems) {
     for (var item in storyItems) {
@@ -49,17 +97,16 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
           ),
         );
       } else if (item.startsWith('http') && item.contains('.mp4')) {
-        /*_videoController = VideoPlayerController.networkUrl(Uri.parse(item))
+        _videoController = VideoPlayerController.networkUrl(Uri.parse(item))
           ..initialize().then((_) {
-              setState(() {
-                  videoPlayerController: _videoController,
-                  autoPlay: true,
-                  looping: false,
-              });
+            setState(() {});
+            _videoController!.play();
           }).catchError((error) {
-            print("Error initializing video: $error");
+            if (kDebugMode) {
+              print("Error initializing video: $error");
+            }
           });
-*/
+
         storyData.add(
           StoryItem.pageVideo(
             item,
@@ -125,15 +172,12 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
             },
             onComplete: () {
               print("Completed a cycle");
-              Navigator.pop(context);
+              Get.back();
             },
             onVerticalSwipeComplete: (direction) {
               if (direction == Direction.down) {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomeScreen()),
-                      (route) => false,
-                );
+                // Get.offAll(const HomeScreen());
+                Get.back();
               }
             },
           );

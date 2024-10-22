@@ -1,17 +1,14 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_editor/video_editor.dart';
 import 'package:videoapp/core/firebase_upload.dart';
-import 'package:videoapp/core/model/song_model.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
 
 import 'crop_page.dart';
@@ -34,9 +31,8 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
   final _isExporting = ValueNotifier<bool>(false);
   final double height = 60;
   final AudioPlayer player = AudioPlayer();
-  ValueNotifier<int> isSelectedPlayIndex = ValueNotifier(-1);
   ValueNotifier<bool> isMuted = ValueNotifier(true);
-  FirebaseUpload firebaseUpload = FirebaseUpload();
+  File? audioFile;
 
   late final VideoEditorController _controller = VideoEditorController.file(
       widget.file,
@@ -48,14 +44,14 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
   @override
   void initState() {
     super.initState();
-   /* _controller.initialize(aspectRatio: 9 / 16).then((_) {
+    _controller.initialize(aspectRatio: 9 / 16).then((_) {
       setState(() {});
       _controller.video.setVolume(1.0);
       isMuted.value = true;
     }).catchError((error) {
-      Navigator.pop(context);
-    }, test: (e) => e is VideoMinDurationError);*/
-    WidgetsBinding.instance.addPostFrameCallback((_){
+      Get.back();
+    }, test: (e) => e is VideoMinDurationError);
+    /*WidgetsBinding.instance.addPostFrameCallback((_){
       _controller.initialize(aspectRatio: 9 / 16).then((_) {
         setState(() {
           _controller.video.setVolume(1.0);
@@ -71,10 +67,10 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
           }
         });
       }).catchError((error) {
-        Navigator.pop(context);
+        Get.back();
         print('Error initializing video controller: $error');
       }, test: (e) => e is VideoMinDurationError);
-    });
+    });*/
   }
 
   @override
@@ -125,10 +121,17 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                                                   color: Colors.white,
                                                   shape: BoxShape.circle,
                                                   boxShadow: [
-                                                    BoxShadow(color: Colors.black26,blurRadius: 8,offset: Offset(0, 4),),
+                                                    BoxShadow(
+                                                      color: Colors.black26,
+                                                      blurRadius: 8,
+                                                      offset: Offset(0, 4),
+                                                    ),
                                                   ],
                                                 ),
-                                                child: const Icon(Icons.play_arrow,color: Colors.black,size: 30),
+                                                child: const Icon(
+                                                    Icons.play_arrow,
+                                                    color: Colors.black,
+                                                    size: 30),
                                               ),
                                             ),
                                           ),
@@ -149,16 +152,22 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                                   children: [
                                     const TabBar(
                                       tabs: [
-                                        Padding(padding: EdgeInsets.all(5),child: Icon(Icons.content_cut)),
-                                        Padding(padding: EdgeInsets.all(5),child: Icon(Icons.video_label)),
+                                        Padding(
+                                            padding: EdgeInsets.all(5),
+                                            child: Icon(Icons.content_cut)),
+                                        Padding(
+                                            padding: EdgeInsets.all(5),
+                                            child: Icon(Icons.video_label)),
                                       ],
                                     ),
                                     Expanded(
                                       child: TabBarView(
-                                        physics: const NeverScrollableScrollPhysics(),
+                                        physics:
+                                            const NeverScrollableScrollPhysics(),
                                         children: [
                                           Column(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: _trimSlider(),
                                           ),
                                           _coverSelection(),
@@ -175,14 +184,16 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                                     duration: kThemeAnimationDuration,
                                     child: export
                                         ? AlertDialog(
-                                            backgroundColor: const Color(0xff6EA9FF),
+                                            backgroundColor:
+                                                const Color(0xff6EA9FF),
                                             title: ValueListenableBuilder(
-                                              valueListenable: _exportingProgress,
+                                              valueListenable:
+                                                  _exportingProgress,
                                               builder: (_, double value, __) =>
                                                   Center(
                                                     child: Text(
                                                       "Exporting video ${(value * 100).ceil()}%",
-                                                      style: const TextStyle(color: Colors.black,fontSize: 16),
+                                                      style: const TextStyle(color: Colors.black, fontSize: 16),
                                                 ),
                                               ),
                                             ),
@@ -205,17 +216,31 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
   }
 
   @override
-  void dispose() async {
+  void dispose() {
+    player.pause();
     player.dispose();
     _exportingProgress.dispose();
     _isExporting.dispose();
-    _controller.dispose();
+
+    if (_controller != null) {
+      _controller.video.pause();
+      _controller.dispose();
+    }
+
     ExportService.dispose();
+
     super.dispose();
   }
 
-  ///   Export Video [_exportVideo]
-  void _exportVideo() async {
+  ///Step 1 :- First Export Video and Pass Video Path to MergeAudioAndVideo Func
+  ///Step 2 :- Use Video Path and Audio Path to Merge Both in One
+  ///Step 3 :- Show Video and Audio Will Play Proper
+  ///Step 4 :- Click Save to Store Video on Server
+
+  late String exportFilePath = "";
+
+  /// Export Video Path [_getExportedFilePath]
+  Future<void> _getExportedFilePath() async {
     _isExporting.value = true;
     _exportingProgress.value = 0;
 
@@ -226,15 +251,81 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
       onProgress: (stats) {
         _exportingProgress.value = config.getFFmpegProgress(stats.getTime().round());
       },
-      onError: (e, s) => showSnackBar(context: context, message: "Error on Export video"),
+      onError: (e, s) {
+        showSnackBar(context: context, message: "Error on Export video");
+        _isExporting.value = false;
+      },
       onCompleted: (exportedFile) async {
         _isExporting.value = false;
-        Get.to(VideoResultPopup(video: exportedFile,title: true,));
+        if (exportedFile != null && exportedFile.path.isNotEmpty) {
+          exportFilePath = exportedFile.path;
+          print("Exported video path: $exportFilePath");
+        } else {
+          print("Exported file is null or path is empty.");
+        }
       },
     );
   }
 
-  ///   Export Video [_exportCover]
+  ///   Export Video [_exportVideo]
+  Future<void> _exportVideo() async {
+    _isExporting.value = true;
+    _exportingProgress.value = 0;
+
+    await _getExportedFilePath();
+
+    if (mounted && exportFilePath.isNotEmpty && File(exportFilePath).existsSync()) {
+      try {
+        final String videoPath = exportFilePath;
+        print("Video Path :- $videoPath");
+        final String audioPath = audioFile!.path;
+
+        final mergedFilePath = await mergeAudioAndVideo(videoPath, audioPath);
+
+        if (mergedFilePath.isNotEmpty) {
+          if (mounted) {
+            final config = VideoFFmpegVideoEditorConfig(_controller);
+
+            await ExportService.runFFmpegCommand(
+              await config.getExecuteConfig(),
+              onProgress: (stats) {
+                if (mounted) {
+                  _exportingProgress.value = config.getFFmpegProgress(stats.getTime().round());
+                }
+              },
+              onError: (e, s) {
+                if (mounted) {
+                  _isExporting.value = false;
+                  showSnackBar(context: context, message: "Error on Export video");
+                }
+              },
+              onCompleted: (exportedFile) async {
+                if (mounted) {
+                  _isExporting.value = false;
+                  Get.to(VideoResultPopup(video: File(mergedFilePath), title: true));
+                }
+              },
+            );
+          }
+        } else {
+          throw Exception("Failed to merge audio and video");
+        }
+      } catch (e) {
+        if (mounted) {
+          _isExporting.value = false;
+          showSnackBar(context: context, message: "Error: $e");
+        }
+      }
+    } else {
+      if (mounted) {
+        _isExporting.value = false;
+        showSnackBar(context: context, message: "Failed to export video or file does not exist.");
+      }
+    }
+  }
+
+
+  ///   Export Cover [_exportCover]
   void _exportCover() async {
     final config = CoverFFmpegVideoEditorConfig(_controller);
     final execute = await config.getExecuteConfig();
@@ -247,7 +338,8 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
 
     await ExportService.runFFmpegCommand(
       execute,
-      onError: (e, s) => showSnackBar(context: context, message: "Error on Export cover"),
+      onError: (e, s) =>
+          showSnackBar(context: context, message: "Error on Export cover"),
       onCompleted: (cover) {
         if (!mounted) return;
         showDialog(
@@ -262,9 +354,9 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
   Widget _topNavBar() {
     return SafeArea(
       child: SizedBox(
-        height: 60, // Set a fixed height for better alignment
+        height: 60,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Distribute evenly
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Expanded(
               child: ValueListenableBuilder(
@@ -276,6 +368,8 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                       onPressed: () async {
                         isMuted.value = !isMuted.value;
                         await _controller.video.setVolume(value ? 0.0 : 1.0);
+                        player.play();
+                        await player.setVolume(value ? 1.0 : 0.0);
                       },
                       icon: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
@@ -290,12 +384,14 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                 },
               ),
             ),
-            const VerticalDivider(endIndent: 16, indent: 16), // Adjusted spacing
+            const VerticalDivider(endIndent: 16, indent: 16),
+            // Adjusted spacing
             Expanded(
               child: Tooltip(
                 message: 'Rotate UnClockwise',
                 child: IconButton(
-                  onPressed: () => _controller.rotate90Degrees(RotateDirection.left),
+                  onPressed: () =>
+                      _controller.rotate90Degrees(RotateDirection.left),
                   icon: const Icon(Icons.rotate_left, size: 30),
                 ),
               ),
@@ -304,12 +400,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
               child: Tooltip(
                 message: 'Open Crop Screen',
                 child: IconButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (context) => CropPage(controller: _controller),
-                    ),
-                  ),
+                  onPressed: () => Get.to(CropPage(controller: _controller)),
                   icon: const Icon(Icons.crop, size: 30),
                 ),
               ),
@@ -322,8 +413,16 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                     Duration duration = _controller.startTrim;
                     Duration duration1 = _controller.endTrim;
                     Duration totalDuration = calculateTotalDuration("$duration", "$duration1");
-                    Get.to(FindSong(file: widget.file,duration: totalDuration));
-                    },
+                    print("Duration :- $totalDuration");
+                   
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => FindSong(audioFile: (file) async {
+                      print("come back $file");
+                      audioFile = File(file);
+                      await player.setAudioSource(AudioSource.file(audioFile!.path));
+                      await player.setLoopMode(LoopMode.one);
+                      player.play();
+                    })));
+                  },
                   icon: const Icon(Icons.music_note, size: 30),
                 ),
               ),
@@ -332,7 +431,8 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
               child: Tooltip(
                 message: 'Rotate Clockwise',
                 child: IconButton(
-                  onPressed: () => _controller.rotate90Degrees(RotateDirection.right),
+                  onPressed: () =>
+                      _controller.rotate90Degrees(RotateDirection.right),
                   icon: const Icon(Icons.rotate_right, size: 30),
                 ),
               ),
@@ -349,7 +449,9 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                       child: const Text('Export Cover'),
                     ),
                     PopupMenuItem(
-                      onTap: () => _exportVideo(),
+                      onTap: () {
+                        _exportVideo();
+                      },
                       child: const Text('Export Video'),
                     ),
                   ],
@@ -362,9 +464,11 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     );
   }
 
+  /// Calculate Duration
   Duration calculateTotalDuration(String duration1, String duration2) {
     Duration d1 = Duration(
-      hours: int.parse(duration1.split(':')[0]),minutes: int.parse(duration1.split(':')[1]),
+      hours: int.parse(duration1.split(':')[0]),
+      minutes: int.parse(duration1.split(':')[1]),
       seconds: int.parse(duration1.split(':')[2].split('.')[0]),
       microseconds: int.parse(duration1.split(':')[2].split('.')[1]),
     );
@@ -402,7 +506,8 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
               children: [
                 Text(
                   formatter(Duration(seconds: pos.toInt())),
-                  style: const TextStyle(fontWeight: FontWeight.bold), // Improved text visibility
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold), // Improved text visibility
                 ),
                 const Expanded(child: SizedBox()),
                 AnimatedOpacity(
@@ -413,12 +518,14 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
                     children: [
                       Text(
                         formatter(_controller.startTrim),
-                        style: const TextStyle(color: Colors.black), // Consistent text color
+                        style: const TextStyle(
+                            color: Colors.black), // Consistent text color
                       ),
                       const SizedBox(width: 10),
                       Text(
                         formatter(_controller.endTrim),
-                        style: const TextStyle(color: Colors.black), // Consistent text color
+                        style: const TextStyle(
+                            color: Colors.black), // Consistent text color
                       ),
                     ],
                   ),
@@ -444,7 +551,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     ];
   }
 
-  ///Create Covers From Video [_coverSelection]
+  ///  Create Covers From Video [_coverSelection]
   Widget _coverSelection() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -471,5 +578,65 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
         ),
       ),
     );
+  }
+
+  ///   Merge Audio and Video [mergeAudioAndVideo] and [getUniqueFilePath]
+  Future<String> mergeAudioAndVideo(String videoPath, String audioPath) async {
+    try {
+      final File audioFile = File(audioPath);
+
+      final Directory? externalDir = await getExternalStorageDirectory();
+      final String basePath = '${externalDir?.parent.parent.parent.parent.path}/Download/';
+
+      String outputPath = getUniqueFilePath(basePath, "output", "mp4");
+
+      final File videoFile = File(videoPath);
+
+      if (!await videoFile.exists()) {
+        throw Exception('Video file does not exist at: $videoPath');
+      }
+      if (!await audioFile.exists()) {
+        throw Exception('Audio file does not exist at: $audioPath');
+      }
+
+      print("Video Path: $videoPath");
+      print("Audio Path: $audioPath");
+      print("Output Path: $outputPath");
+
+      final String command = "-y -i $videoPath -i $audioPath -map 0:v -map 1:a -c:v copy -shortest $outputPath";
+
+      await FFmpegKit.execute(command).then((session) async {
+        final returnCode = await session.getReturnCode();
+        final log = await session.getAllLogs();
+        for (var log in log) {
+          print(log.getMessage());
+        }
+
+        if (ReturnCode.isSuccess(returnCode)) {
+          return outputPath;
+        } else if (ReturnCode.isCancel(returnCode)) {
+          throw Exception('FFmpeg command was canceled');
+        } else {
+          throw Exception('FFmpeg command failed');
+        }
+      });
+
+      print("Output Path: $outputPath");
+      return outputPath;
+    } catch (e) {
+      throw Exception('Error merging audio and video: $e');
+    }
+  }
+
+  String getUniqueFilePath(String basePath, String fileName, String extension) {
+    int count = 0;
+    String fullPath = '$basePath$fileName.$extension';
+
+    while (File(fullPath).existsSync()) {
+      count++;
+      fullPath = '$basePath$fileName$count.$extension';
+    }
+
+    return fullPath;
   }
 }
