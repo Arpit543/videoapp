@@ -107,19 +107,12 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
           _progressVisibility = false;
         });
 
-        // Get.off(VideoEditor(file: widget.videoFile,audio: trimmedAudioFile,));
-
-        // Navigator.pop(context, [trimmedAudioFile]);
-        // Navigator.of(context, rootNavigator: true).pop([trimmedAudioFile]);
-
         widget.audioFile(trimmedAudioFile.path);
         Navigator.pop(context);
       },
     );
   }
 
-  /// When audio saved here trimmed audio not passed to video editor
-  /// in flutter using easy audio trimmer, trimmed audio of 30 second is not passed into second file
 
   @override
   void dispose() {

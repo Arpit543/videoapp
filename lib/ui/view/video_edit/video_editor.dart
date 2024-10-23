@@ -257,7 +257,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
       },
       onCompleted: (exportedFile) async {
         _isExporting.value = false;
-        if (exportedFile != null && exportedFile.path.isNotEmpty) {
+        if (exportedFile.path.isNotEmpty) {
           exportFilePath = exportedFile.path;
           print("Exported video path: $exportFilePath");
         } else {
@@ -323,7 +323,6 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
       }
     }
   }
-
 
   ///   Export Cover [_exportCover]
   void _exportCover() async {

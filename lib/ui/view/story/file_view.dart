@@ -24,13 +24,18 @@ class _FileViewState extends State<FileView> {
   VideoPlayerController? _controller;
   bool isLoadingVideo = true;
   final double height = 60;
-  late VideoEditorController _controllerEdit;
+  late final VideoEditorController _controllerEdit;
   int length = 0;
   bool _showTrimSlider = false;
 
-
   @override
   void initState() {
+    _controllerEdit.initialize(aspectRatio: 9 / 16).then((_) {
+      setState(() {});
+      _controllerEdit.video.setVolume(1.0);
+    }).catchError((error) {
+      Get.back();
+    }, test: (e) => e is VideoMinDurationError);
     super.initState();
     _initializeVideoController(0);
   }
@@ -44,6 +49,8 @@ class _FileViewState extends State<FileView> {
       setState(() {
         isLoadingVideo = true;
       });
+
+
 
       _controllerEdit = VideoEditorController.file(
           File(widget.storyItems[index].story),
@@ -60,7 +67,7 @@ class _FileViewState extends State<FileView> {
         isLoadingVideo = false;
         _controller!.play();
         length = _controller!.value.duration.inSeconds;
-        if(length > 30) {
+        if (length > 30) {
           _showTrimSlider = true;
         }
         print("Length :- $length");
@@ -116,12 +123,14 @@ class _FileViewState extends State<FileView> {
                 },
               ),
             ),
-            /*if (_showTrimSlider) Flexible(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: _trimSlider(_controllerEdit),
+            if (_showTrimSlider)
+              SizedBox(
+                height: 150,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: _trimSlider(_controllerEdit),
+                ),
               ),
-            ),*/
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: SmoothPageIndicator(
@@ -170,7 +179,10 @@ class _FileViewState extends State<FileView> {
                     child: IconButton(
                       onPressed: () {
                         if (length > 30) {
-                          showSnackBar(context: context, message: "Please select video length up to 30 seconds");
+                          showSnackBar(
+                              context: context,
+                              message:
+                                  "Please select video length up to 30 seconds");
                         } else {
                           _handleEdit(widget.storyItems);
                         }
@@ -179,7 +191,8 @@ class _FileViewState extends State<FileView> {
                         child: Text(
                           "Edit",
                           style: TextStyle(
-                            color: const CropGridStyle().selectedBoundariesColor,
+                            color:
+                                const CropGridStyle().selectedBoundariesColor,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -196,9 +209,9 @@ class _FileViewState extends State<FileView> {
   }
 
   String formatter(Duration duration) => [
-    duration.inMinutes.remainder(60).toString().padLeft(2, '0'),
-    duration.inSeconds.remainder(60).toString().padLeft(2, '0')
-  ].join(":");
+        duration.inMinutes.remainder(60).toString().padLeft(2, '0'),
+        duration.inSeconds.remainder(60).toString().padLeft(2, '0')
+      ].join(":");
 
   List<Widget> _trimSlider(VideoEditorController controllerEdit) {
     return [
@@ -217,7 +230,8 @@ class _FileViewState extends State<FileView> {
               children: [
                 Text(
                   formatter(Duration(seconds: pos.toInt())),
-                  style: const TextStyle(fontWeight: FontWeight.bold), // Improved text visibility
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold), // Improved text visibility
                 ),
                 const Expanded(child: SizedBox()),
                 const Expanded(child: SizedBox()),
@@ -229,12 +243,14 @@ class _FileViewState extends State<FileView> {
                     children: [
                       Text(
                         formatter(controllerEdit.startTrim),
-                        style: const TextStyle(color: Colors.black), // Consistent text color
+                        style: const TextStyle(
+                            color: Colors.black), // Consistent text color
                       ),
                       const SizedBox(width: 10),
                       Text(
                         formatter(controllerEdit.endTrim),
-                        style: const TextStyle(color: Colors.black), // Consistent text color
+                        style: const TextStyle(
+                            color: Colors.black), // Consistent text color
                       ),
                     ],
                   ),
@@ -263,14 +279,22 @@ class _FileViewState extends State<FileView> {
   void _handleEdit(List<StoryTypeModel> storyItems) {
     for (var item in storyItems) {
       print("URLS : $item");
-      if (item.story.contains('.jpg') || item.story.contains('.png') || item.story.contains('.jpeg')) {
+      if (item.story.contains('.jpg') ||
+          item.story.contains('.png') ||
+          item.story.contains('.jpeg')) {
         Get.to(ImageEditor(file: File(item.story)));
         break;
-      } else if (item.story.contains('.mp4') || item.story.contains('.mov') || item.story.contains('.avi') || item.story.contains('.mp3') || item.story.contains('.mkv')) {
+      } else if (item.story.contains('.mp4') ||
+          item.story.contains('.mov') ||
+          item.story.contains('.avi') ||
+          item.story.contains('.mp3') ||
+          item.story.contains('.mkv')) {
         Get.to(VideoEditor(file: File(item.story)));
         break;
       } else {
-        showSnackBar(context: context, message: "Unsupported file type for editing: $item");
+        showSnackBar(
+            context: context,
+            message: "Unsupported file type for editing: $item");
         break;
       }
     }
