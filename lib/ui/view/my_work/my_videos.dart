@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
@@ -55,6 +57,23 @@ class _MyVideosWorkState extends State<MyVideosWork> {
     return file;
   }
 
+  /// Function to delete video from Firebase Storage
+  Future<void> _deleteVideo(String videoUrl, BuildContext context) async {
+    try {
+      final FirebaseAuth auth = FirebaseAuth.instance;
+      String fileName = videoUrl.split('%2F').last.split('?').first;
+      print(fileName);
+      final storageRef = FirebaseStorage.instance.ref("${auth.currentUser!.uid}/Videos/$fileName");
+      await storageRef.delete();
+
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Video deleted successfully!')),);
+      await upload.getVideoData();
+      setState(() {});
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting video: $e')),);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,6 +106,7 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                         ),
                         itemBuilder: (context, index) {
                           final videoUrl = upload.videoURLs[index];
+                          print(videoUrl);
                           return FutureBuilder<String?>(
                             future: _getCachedThumbnail(videoUrl),
                             builder: (context, thumbnailSnapshot) {
@@ -97,6 +117,31 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                                   onTap: () async {
                                     final file = await _getCachedVideoFile(videoUrl);
                                     Get.to(VideoResultPopup(video: file, title: false));
+                                  },
+                                  onLongPress: () async {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Delete Video'),
+                                        content: const Text('Are you sure you want to delete this video?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                            child: const Text('Cancel'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () async {
+                                              Navigator.of(context).pop();
+                                              print("Url :- ${videoUrl.tr}");
+                                              await _deleteVideo(videoUrl, context);
+                                            },
+                                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
                                   },
                                   child: Container(
                                     decoration: BoxDecoration(
@@ -161,3 +206,5 @@ class CachedFileHelper {
     return file;
   }
 }
+
+

@@ -51,10 +51,10 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           galleryFile = File(pickedFile.path);
         });
-        Get.to(VideoEditor(file: File(pickedFile.path)));
+        Get.to(VideoEditor(pickedFile: File(pickedFile.path), videoFile: (String file) {  },isStory: false,));
       }
     } catch (e) {
-      showSnackBar(context: context, message: "Error picking video: $e");
+      if(mounted) showSnackBar(context: context, message: "Error picking video: $e");
     }
   }
 
@@ -93,13 +93,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (path != null) {
                     if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png')) {
                       storyItems.add(StoryTypeModel(story: path, type: StoryType.image));
-                    } else if (path.endsWith('.mov') || path.endsWith('.mp4') || path.endsWith('.mkv') || path.endsWith('.avi')) {storyItems.add(StoryTypeModel(story: path, type: StoryType.video));
+                    } else if (path.endsWith('.mov') || path.endsWith('.mp4') || path.endsWith('.mkv') || path.endsWith('.avi')) {
+                      storyItems.add(StoryTypeModel(story: path, type: StoryType.video));
                     }
                   }
                 }
               }
               setState(() {});
-              if (storyItems.isNotEmpty) Get.to(FileView(storyItems: storyItems));
+              if (storyItems.isNotEmpty) {
+                Get.to(FileView(pickedMedia: storyItems, videoFile: (String file) {  },));
+              }
             } catch (e) {
               showSnackBar(context: context, message: "Error picking media: $e");
             }

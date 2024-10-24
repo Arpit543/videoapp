@@ -9,6 +9,7 @@ import 'package:pro_image_editor/models/editor_configs/pro_image_editor_configs.
 import 'package:pro_image_editor/modules/main_editor/main_editor.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
+import 'package:videoapp/ui/view/video_edit/find_song.dart';
 
 class ImageEditor extends StatefulWidget {
   final File file;
@@ -34,7 +35,7 @@ class _ImageEditorState extends State<ImageEditor> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
+     /* appBar: AppBar(
         backgroundColor: const Color(0xff6EA9FF),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -43,7 +44,7 @@ class _ImageEditorState extends State<ImageEditor> {
           "Image Editor",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-      ),
+      ),*/
       body: Stack(
         children: [
           Container(
@@ -66,15 +67,22 @@ class _ImageEditorState extends State<ImageEditor> {
               ),
             ),
           ),
-          if (_isUploading)
-            Center(
-              child: Container(
-                color: Colors.white.withOpacity(0.8),
-                child: const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xff6EA9FF)),
-                ),
-              ),
-            ),
+          Positioned(
+              top: 2,
+              right: Get.width / 2.6,
+              child:IconButton(icon: const Icon(Icons.audiotrack), color: Colors.white, onPressed: () {
+                showModalBottomSheet(
+                  showDragHandle: true,
+                  enableDrag: true,
+                  isScrollControlled: true,
+                  isDismissible: true,
+                  elevation: 0.5,
+                  useSafeArea: true,
+                  context: context,
+                  builder: (context) => FindSong(audioFile: (file) {
+
+                },),);
+              },)),
         ],
       ),
     );

@@ -1,13 +1,9 @@
 import 'dart:io';
-import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:easy_audio_trimmer/easy_audio_trimmer.dart';
 import 'package:videoapp/core/model/song_model.dart';
-import 'package:videoapp/ui/view/video_edit/video_editor.dart';
 
 class AudioTrimmerViewDemo extends StatefulWidget {
   final Song song;
@@ -49,18 +45,6 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
     setState(() {
       isLoading = false;
     });
-  }
-
-  String getUniqueFilePath(String basePath, String fileName, String extension) {
-    int count = 0;
-    String fullPath = '$basePath$fileName.$extension';
-
-    while (File(fullPath).existsSync()) {
-      count++;
-      fullPath = '$basePath$fileName$count.$extension';
-    }
-
-    return fullPath;
   }
 
   Future<void> _saveAudio(BuildContext context) async {
@@ -112,7 +96,6 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
       },
     );
   }
-
 
   @override
   void dispose() {
@@ -221,7 +204,6 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                   onChangeStart: (value) {
                     setState(() {
                       startValue = value;
-                      print("Start Value: $startValue");
                     });
 
                     _trimmer.audioPlaybackControl(startValue: startValue, endValue: endValue);
@@ -229,7 +211,6 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                   onChangeEnd: (value) {
                     setState(() {
                       endValue = value;
-                      print("End Value: $endValue");
                     });
 
                     _trimmer.audioPlaybackControl(startValue: startValue, endValue: endValue);

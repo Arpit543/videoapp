@@ -20,18 +20,20 @@ class _MyImagesWorkState extends State<MyImagesWork> {
     _dataFutureImages = upload.getImageData();
   }
 
+  Future<void> _refreshImages() async {
+    await upload.getImageData();
+    setState(() {
+      _dataFutureImages = upload.getImageData();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () async {
-            await upload.getImageData();
-            setState(() {
-              _dataFutureImages = upload.getImageData();
-            });
-          },
+          onRefresh: _refreshImages,
           child: FutureBuilder(
             future: _dataFutureImages,
             builder: (context, snapshot) {
@@ -126,3 +128,4 @@ class FullScreenImageViewer extends StatelessWidget {
     );
   }
 }
+

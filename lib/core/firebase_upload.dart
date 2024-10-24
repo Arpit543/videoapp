@@ -10,8 +10,20 @@ import 'package:videoapp/ui/view/splash_screen.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
 
 import '../ui/view/auth_pages/login.dart';
-import '../ui/view/story/story_view.dart';
 import 'constants.dart';
+
+
+///   Upload Image n Video to Firebase using [uploadFileInStorage]
+///   Upload Image n Video to Firebase using [uploadListInStorage]
+///   Fetch Story List from Firebase Storage using [fetchStoryList]
+///   Fetch Image from Firebase Storage using [fetchImagesList]
+///   Fetch Video from Firebase Storage using [fetchVideosList]
+///   Function to get image [getImageData]
+///   Function to get video [getVideoData]
+///   Function to get Story [getStoryData]
+///   Register User With Email n Password [registerUser]
+///   Login with Email n Password [userLogin]
+///   Logout Your Session [logout]
 
 class FirebaseUpload {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -26,21 +38,24 @@ class FirebaseUpload {
   int lenImages = 0;
   int lenVideos = 0;
 
-  ///   Upload Image n Video to Firebase using [uploadFileInStorage]
   Future<void> uploadFileInStorage({required File file, required String type, required BuildContext context}) async {
     String fileName = file.path.split("/").last;
     Reference storageRef = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/$type/$fileName");
 
     try {
-      storageRef.putFile(file);
-      showSnackBar(message: 'File Edited successfully',context: context,isError: false);
+      UploadTask uploadTask = storageRef.putFile(file);
+      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+        double progress = snapshot.bytesTransferred / snapshot.totalBytes;
+        print('Upload Progress: ${(progress * 100).toStringAsFixed(2)}%');
+      });
+
+      await uploadTask;
+      print("Uploaded");
     } catch (e) {
-      print("Unable to Edit File ${e.toString()}");
-      showSnackBar(message: 'Unable to Edit File $e', context: context, isError: true);
+      print("Not Uploaded");
     }
   }
 
-  ///   Upload Image n Video to Firebase using [uploadListInStorage]
   Future<void> uploadListInStorage({required List<String> images,required String type,required BuildContext context,}) async {
     final storage = FirebaseStorage.instance;
     final auth = FirebaseAuth.instance;
@@ -55,18 +70,27 @@ class FirebaseUpload {
 
         uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
           double progress = 100.0 * (snapshot.bytesTransferred / snapshot.totalBytes);
-          print('Upload of $fileName is $progress% complete.');
+          debugPrint("Progress ==> $progress");
         });
 
-        TaskSnapshot snapshot = await uploadTask;
+        await uploadTask;
 
-        String downloadUrl = await snapshot.ref.getDownloadURL();
-
+        print("131sf31ad35gf5d313d13");
         showSnackBar(message: 'Story uploaded successfully!', context: context, isError: false);
        } catch (e) {
-        print(e);
         showSnackBar(message: 'Failed to upload $imagePath', context: context, isError: true);
       }
+    }
+  }
+
+  Future<void> deleteImageOrVideo({required File url,required String type,required BuildContext context}) async {
+    try{
+      String fileName = url.path.split("/").last;
+      print("Filename ==> $fileName");
+      FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/$type/$fileName").delete();
+      showSnackBar(message: 'File Deleted successfully!', context: context, isError: false);
+    } catch(e){
+      showSnackBar(message: 'Something went wrong!', context: context, isError: false);
     }
   }
 
@@ -86,7 +110,6 @@ class FirebaseUpload {
     }
   }
 
-  ///   Fetch Image from Firebase Storage using [fetchImagesList]
   Future<List<String>> fetchImagesList() async {
     try {
       final storageRefImages = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/Images");
@@ -103,7 +126,6 @@ class FirebaseUpload {
     }
   }
 
-  ///   Fetch Video from Firebase Storage using [fetchVideosList]
   Future<List<String>> fetchVideosList() async {
     try {
       final storageRefVideos = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/Videos");
@@ -121,7 +143,6 @@ class FirebaseUpload {
     }
   }
 
-  ///   Function [getImageData] to get image
   Future<void> getImageData() async {
     final imageUrls = await fetchImagesList();
 
@@ -131,7 +152,6 @@ class FirebaseUpload {
     } else {}
   }
 
-  ///   Function [getVideoData] to get video
   Future<void> getVideoData() async {
     final videoURL = await fetchVideosList();
 
@@ -141,7 +161,6 @@ class FirebaseUpload {
     } else {}
   }
 
-  ///   Function [getStoryData] to get video
   Future<List<String>> getStoryData() async {
     final videoURL = await fetchStoryList();
 
@@ -153,7 +172,6 @@ class FirebaseUpload {
     return videoURLs;
   }
 
-  ///   Register User With Email n Password
   Future<void> registerUser({required String name, required String email, required String password, required String cPassword, required BuildContext context,}) async {
     if (password != cPassword) {
       if (kDebugMode) {
@@ -200,7 +218,6 @@ class FirebaseUpload {
     }
   }
 
-  ///   Login with Email n Password
   Future<void> userLogin({required String email,required String password,required BuildContext context,}) async {
     try {
       UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -243,7 +260,6 @@ class FirebaseUpload {
     }
   }
 
-  ///   Logout Your Session
   Future<void> logout(BuildContext context) async {
     try {
       await Constants.clear();
@@ -253,6 +269,20 @@ class FirebaseUpload {
       if (kDebugMode) {
         print('Error during logout: $e');
       }
+    }
+  }
+
+/*  Reference storageRef = storage.ref().child("${auth.currentUser!.uid}/$type/$fileName");
+  deleteStoryAfterOneMinute(storageRef);*/
+
+  Future<void> deleteStoryAfterOneMinute(Reference storageRef) async {
+    await Future.delayed(const Duration(minutes: 1));
+
+    try {
+      await storageRef.delete();
+      print("File deleted successfully after 1 minute.");
+    } catch (e) {
+      print("Error deleting file: $e");
     }
   }
 }

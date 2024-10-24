@@ -92,12 +92,8 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                   alignment: Alignment.center,
                   children: [
                     AspectRatio(
-                      aspectRatio: _fileDimension.aspectRatio != 0
-                          ? _fileDimension.aspectRatio
-                          : 1,
-                      child: _isGif
-                          ? Image.file(widget.video, fit: BoxFit.cover)
-                          : VideoPlayer(_controller!),
+                      aspectRatio: _fileDimension.aspectRatio != 0 ? _fileDimension.aspectRatio : 1,
+                      child: _isGif ? Image.file(widget.video, fit: BoxFit.cover) : VideoPlayer(_controller!),
                     ),
                     // Play/Pause Button
                     if (!_isGif) // Only show for video
@@ -175,13 +171,9 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                 Expanded(
                   flex: 2,
                   child: TextButton(
-                    onPressed: () {
-                      FirebaseUpload().uploadFileInStorage(
-                        file: widget.video,
-                        type: "Videos",
-                        context: context,
-                      );
-                      Get.offAll(const HomeScreen());
+                    onPressed: () async {
+                      await FirebaseUpload().uploadFileInStorage(file: widget.video,type: "Videos",context: context,);
+
                     },
                     child: Text(
                       "Save",

@@ -5,37 +5,34 @@ import 'package:get/get.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:video_editor/video_editor.dart';
 import 'package:video_player/video_player.dart';
+import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
 import 'package:videoapp/ui/view/image_editor/image_editor.dart';
+import 'package:videoapp/ui/view/story/story_view.dart';
 import 'package:videoapp/ui/view/video_edit/video_editor.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
 
 class FileView extends StatefulWidget {
-  final List<StoryTypeModel> storyItems;
-
-  const FileView({super.key, required this.storyItems});
+  final List<StoryTypeModel> pickedMedia;
+  final Function(String file) videoFile;
+  const FileView({super.key, required this.pickedMedia, required this.videoFile});
 
   @override
   State<FileView> createState() => _FileViewState();
 }
 
 class _FileViewState extends State<FileView> {
+  List<StoryTypeModel> pickedMediaStory = [];
   PageController pageController = PageController();
   VideoPlayerController? _controller;
   bool isLoadingVideo = true;
+  bool isLoadingUpload = false;
   final double height = 60;
-  late final VideoEditorController _controllerEdit;
   int length = 0;
-  bool _showTrimSlider = false;
 
   @override
   void initState() {
-    _controllerEdit.initialize(aspectRatio: 9 / 16).then((_) {
-      setState(() {});
-      _controllerEdit.video.setVolume(1.0);
-    }).catchError((error) {
-      Get.back();
-    }, test: (e) => e is VideoMinDurationError);
+    pickedMediaStory = widget.pickedMedia;
     super.initState();
     _initializeVideoController(0);
   }
@@ -45,32 +42,18 @@ class _FileViewState extends State<FileView> {
       await _controller!.dispose();
     }
 
-    if (widget.storyItems[index].type == StoryType.video) {
+    if (pickedMediaStory[index].type == StoryType.video) {
       setState(() {
         isLoadingVideo = true;
       });
 
-
-
-      _controllerEdit = VideoEditorController.file(
-          File(widget.storyItems[index].story),
-          minDuration: const Duration(seconds: 1),
-          maxDuration: const Duration(seconds: 30),
-          coverThumbnailsQuality: 100,
-          trimThumbnailsQuality: 100);
-
-      final File videoFile = File(widget.storyItems[index].story);
+      final File videoFile = File(pickedMediaStory[index].story);
       _controller = VideoPlayerController.file(videoFile);
 
       await _controller!.initialize();
       setState(() {
         isLoadingVideo = false;
-        _controller!.play();
         length = _controller!.value.duration.inSeconds;
-        if (length > 30) {
-          _showTrimSlider = true;
-        }
-        print("Length :- $length");
         _controller!.setLooping(true);
       });
     }
@@ -78,6 +61,7 @@ class _FileViewState extends State<FileView> {
 
   @override
   void dispose() {
+    pickedMediaStory.clear();
     _controller?.dispose();
     super.dispose();
   }
@@ -89,7 +73,12 @@ class _FileViewState extends State<FileView> {
         backgroundColor: const Color(0xff6EA9FF),
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
+        automaticallyImplyLeading: false,
         centerTitle: true,
+        leading: InkWell(
+            onTap: () { pickedMediaStory.clear(); _controller?.dispose(); Get.back();},
+            child: const Icon(Icons.arrow_back, color:  Colors.white,),
+        ),
         title: const Text(
           'Post',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -101,9 +90,9 @@ class _FileViewState extends State<FileView> {
             Expanded(
               child: PageView.builder(
                 controller: pageController,
-                itemCount: widget.storyItems.length,
+                itemCount: pickedMediaStory.length,
                 onPageChanged: (index) {
-                  if (widget.storyItems[index].type == StoryType.video) {
+                  if (pickedMediaStory[index].type == StoryType.video) {
                     _initializeVideoController(index);
                   } else {
                     setState(() {
@@ -117,25 +106,17 @@ class _FileViewState extends State<FileView> {
                     padding: const EdgeInsets.all(5),
                     child: SizedBox(
                       width: MediaQuery.of(context).size.width,
-                      child: customStoryView(story: widget.storyItems[index]),
+                      child: customStoryView(story: pickedMediaStory[index]),
                     ),
                   );
                 },
               ),
             ),
-            if (_showTrimSlider)
-              SizedBox(
-                height: 150,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: _trimSlider(_controllerEdit),
-                ),
-              ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: SmoothPageIndicator(
                 controller: pageController,
-                count: widget.storyItems.length,
+                count: pickedMediaStory.length,
                 effect: const ExpandingDotsEffect(
                   activeDotColor: Color(0xff6EA9FF),
                   dotHeight: 10,
@@ -162,13 +143,10 @@ class _FileViewState extends State<FileView> {
                   Expanded(
                     flex: 1,
                     child: IconButton(
-                      onPressed: () {
-                        widget.storyItems.clear();
-                        Get.back();
-                      },
+                      onPressed: () { _handleEdit(pickedMediaStory[pageController.page!.toInt()]); },
                       icon: const Center(
                         child: Text(
-                          "Discard",
+                          "Edit",
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -177,22 +155,38 @@ class _FileViewState extends State<FileView> {
                   Expanded(
                     flex: 1,
                     child: IconButton(
-                      onPressed: () {
-                        if (length > 30) {
-                          showSnackBar(
-                              context: context,
-                              message:
-                                  "Please select video length up to 30 seconds");
-                        } else {
-                          _handleEdit(widget.storyItems);
+                      onPressed: () async {
+                        setState(() {
+                          isLoadingUpload = true;
+                        });
+
+                        List<String> data = [];
+                        for (int i = 0; i < pickedMediaStory.length; i++) {
+                          StoryTypeModel imagePath = pickedMediaStory[i];
+                          data.add(imagePath.story);
                         }
+
+                        for (int i = 0; i < data.length; i++) {
+                          await FirebaseUpload().uploadListInStorage(
+                            images: [data[i]],
+                            type: "Story",
+                            context: context,
+                          );
+                        }
+
+                        setState(() {
+                          isLoadingUpload = false;
+                        });
+
+
+                        Get.off(const StoryViewScreen());
+
                       },
                       icon: Center(
-                        child: Text(
-                          "Edit",
+                        child: isLoadingUpload ? const Center(child: CircularProgressIndicator()) : Text(
+                          "Next",
                           style: TextStyle(
-                            color:
-                                const CropGridStyle().selectedBoundariesColor,
+                            color: const CropGridStyle().selectedBoundariesColor,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -213,95 +207,24 @@ class _FileViewState extends State<FileView> {
         duration.inSeconds.remainder(60).toString().padLeft(2, '0')
       ].join(":");
 
-  List<Widget> _trimSlider(VideoEditorController controllerEdit) {
-    return [
-      AnimatedBuilder(
-        animation: Listenable.merge([
-          controllerEdit,
-          controllerEdit.video,
-        ]),
-        builder: (_, __) {
-          final int duration = controllerEdit.videoDuration.inSeconds;
-          final double pos = controllerEdit.trimPosition * duration;
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 50),
-            child: Row(
-              children: [
-                Text(
-                  formatter(Duration(seconds: pos.toInt())),
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold), // Improved text visibility
-                ),
-                const Expanded(child: SizedBox()),
-                const Expanded(child: SizedBox()),
-                AnimatedOpacity(
-                  opacity: controllerEdit.isTrimming ? 1 : 0,
-                  duration: kThemeAnimationDuration,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        formatter(controllerEdit.startTrim),
-                        style: const TextStyle(
-                            color: Colors.black), // Consistent text color
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        formatter(controllerEdit.endTrim),
-                        style: const TextStyle(
-                            color: Colors.black), // Consistent text color
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-      SizedBox(
-        width: MediaQuery.of(context).size.width,
-        child: TrimSlider(
-          controller: controllerEdit,
-          scrollController: ScrollController(keepScrollOffset: true),
-          height: height,
-          horizontalMargin: height / 4,
-          child: TrimTimeline(
-            controller: controllerEdit,
-            padding: const EdgeInsets.only(top: 10),
-          ),
-        ),
-      ),
-    ];
-  }
-
-  void _handleEdit(List<StoryTypeModel> storyItems) {
-    for (var item in storyItems) {
-      print("URLS : $item");
-      if (item.story.contains('.jpg') ||
-          item.story.contains('.png') ||
-          item.story.contains('.jpeg')) {
-        Get.to(ImageEditor(file: File(item.story)));
-        break;
-      } else if (item.story.contains('.mp4') ||
-          item.story.contains('.mov') ||
-          item.story.contains('.avi') ||
-          item.story.contains('.mp3') ||
-          item.story.contains('.mkv')) {
-        Get.to(VideoEditor(file: File(item.story)));
-        break;
-      } else {
-        showSnackBar(
-            context: context,
-            message: "Unsupported file type for editing: $item");
-        break;
-      }
+  void _handleEdit(StoryTypeModel storyItems) {
+    if (storyItems.story.contains('.jpg') || storyItems.story.contains('.png') || storyItems.story.contains('.jpeg')) {
+      Get.to(ImageEditor(file: File(storyItems.story)));
+    } else if (storyItems.story.contains('.mp4') || storyItems.story.contains('.mov') || storyItems.story.contains('.avi') ||
+        storyItems.story.contains('.mp3') || storyItems.story.contains('.mkv')) {
+      Get.to(VideoEditor(
+        pickedFile: File(storyItems.story),
+        videoFile: (file) { pickedMediaStory.add(StoryTypeModel( story: file, type: StoryType.video,)); },
+        isStory: true,
+      ));
+    } else {
+      showSnackBar(context: context, isError: true, message: "Unsupported file type for editing: ${storyItems.story}");
     }
   }
 
   Widget customStoryView({required StoryTypeModel story}) {
     final File mediaFile = File(story.story);
+
     switch (story.type) {
       case StoryType.image:
         return Image.file(
@@ -309,16 +232,42 @@ class _FileViewState extends State<FileView> {
           fit: BoxFit.cover,
           width: MediaQuery.of(context).size.width,
         );
+
       case StoryType.video:
         if (_controller != null && _controller!.value.isInitialized) {
-          return isLoadingVideo
-              ? const Center(child: CircularProgressIndicator())
-              : VideoPlayer(_controller!);
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              VideoPlayer(_controller!),
+
+              Positioned(
+                bottom: 20,
+                child: IconButton(
+                  icon: Icon(
+                    _controller!.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      if (_controller!.value.isPlaying) {
+                        _controller!.pause();
+                      } else {
+                        _controller!.play();
+                      }
+                    });
+                  },
+                ),
+              ),
+            ],
+          );
         } else {
           return const Center(child: CircularProgressIndicator());
         }
+
       default:
         return Text(story.story);
     }
   }
+
 }

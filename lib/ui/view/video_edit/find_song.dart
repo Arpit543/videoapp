@@ -56,7 +56,9 @@ class _FindSongState extends State<FindSong> {
 
   @override
   void dispose() {
+    player.pause();
     player.dispose();
+    isLoading = false;
     searchController.removeListener(_filterSongs);
     searchController.dispose();
     super.dispose();
@@ -213,7 +215,6 @@ class _FindSongState extends State<FindSong> {
       if (response.statusCode == 200) {
         final File audioFile = File(audioPath);
         await audioFile.writeAsBytes(response.bodyBytes).then((_) async {
-          // Get.off(AudioTrimmerViewDemo(videoFile: audioFile, song: map, videoDuration: widget.videoDuration));
           Navigator.pushReplacement(context,
               MaterialPageRoute(builder: (context) => AudioTrimmerViewDemo(videoFile: audioFile, song: map, audioFile: (file) {
                 print("come back 123 $file");
@@ -221,7 +222,7 @@ class _FindSongState extends State<FindSong> {
               })));
 
         }).catchError((error) {
-
+          debugPrint("Failed to navigate using audio");
         });
 
       } else {
