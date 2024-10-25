@@ -116,7 +116,7 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                                 return GestureDetector(
                                   onTap: () async {
                                     final file = await _getCachedVideoFile(videoUrl);
-                                    Get.to(VideoResultPopup(video: file, title: false));
+                                    Get.to(VideoResultPopup(video: file,isShowWidget: false,));
                                   },
                                   onLongPress: () async {
                                     showDialog(

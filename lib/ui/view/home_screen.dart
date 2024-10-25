@@ -51,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           galleryFile = File(pickedFile.path);
         });
-        Get.to(VideoEditor(pickedFile: File(pickedFile.path), videoFile: (String file) {  },isStory: false,));
+        Get.to(VideoEditor(videoFile: File(pickedFile.path), videoFileFunction: (String file) {  },isStory: false,));
       }
     } catch (e) {
       if(mounted) showSnackBar(context: context, message: "Error picking video: $e");
@@ -64,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         cameraFile = File(pickedFile.path);
       });
-      Get.to(ImageEditor(file: cameraFile!));
+      Get.to(ImageEditor(imageFile: cameraFile!, audioFile: (file) {},));
     }
   }
 
@@ -104,7 +104,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Get.to(FileView(pickedMedia: storyItems, videoFile: (String file) {  },));
               }
             } catch (e) {
-              showSnackBar(context: context, message: "Error picking media: $e");
+              if(mounted) {
+                showSnackBar(context: context, message: "Error picking media: $e", isError: true);
+              }
             }
           },
           child: const Padding(

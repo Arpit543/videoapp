@@ -8,24 +8,23 @@ import 'package:path/path.dart' as path;
 import 'package:video_editor/video_editor.dart';
 import 'package:video_player/video_player.dart';
 import 'package:videoapp/core/firebase_upload.dart';
-import 'package:videoapp/ui/view/home_screen.dart';
 
-Future<void> _getImageDimension(File file,
-    {required Function(Size) onResult}) async {
+import '../my_work/tab_vew.dart';
+
+Future<void> _getImageDimension(File file, {required Function(Size) onResult}) async {
   var decodedImage = await decodeImageFromList(file.readAsBytesSync());
   onResult(Size(decodedImage.width.toDouble(), decodedImage.height.toDouble()));
 }
 
-String _fileMBSize(File file) =>
-    ' ${(file.lengthSync() / (1024 * 1024)).toStringAsFixed(1)} MB';
+String _fileMBSize(File file) => ' ${(file.lengthSync() / (1024 * 1024)).toStringAsFixed(1)} MB';
 
 /// Class to show Video after edit [VideoResultPopup]
 
 class VideoResultPopup extends StatefulWidget {
   final File video;
-  final bool title;
+  final bool isShowWidget;
 
-  const VideoResultPopup({super.key, required this.video, required this.title});
+  const VideoResultPopup({super.key, required this.video, required this.isShowWidget});
 
   @override
   State<VideoResultPopup> createState() => _VideoResultPopupState();
@@ -37,6 +36,7 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
   late final bool _isGif = path.extension(widget.video.path).toLowerCase() == ".gif";
   late String _fileMbSize;
   bool _isPlaying = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -69,18 +69,25 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.white,
-        appBar: AppBar(
+        appBar: widget.isShowWidget == true ?
+        AppBar(
           backgroundColor: const Color(0xff6EA9FF),
           elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
           centerTitle: true,
-          title: Text(
-            widget.title ? "Edited Video" : "",
-            style: const TextStyle(
+          title: const Text(
+            "Edited Video",
+            style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 20,
             ),
           ),
+        ) :
+        AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.black),
         ),
         body: Padding(
           padding: const EdgeInsets.all(5),
@@ -92,10 +99,9 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                   alignment: Alignment.center,
                   children: [
                     AspectRatio(
-                      aspectRatio: _fileDimension.aspectRatio != 0 ? _fileDimension.aspectRatio : 1,
+                      aspectRatio: _fileDimension.aspectRatio != 0 ? _fileDimension.aspectRatio : _controller!.value.aspectRatio,
                       child: _isGif ? Image.file(widget.video, fit: BoxFit.cover) : VideoPlayer(_controller!),
                     ),
-                    // Play/Pause Button
                     if (!_isGif) // Only show for video
                       GestureDetector(
                         onTap: _togglePlayPause,
@@ -120,8 +126,8 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                       bottom: 0,
                       left: 0,
                       right: 0,
-                      child: widget.title
-                          ? FileDescription(
+                      child: widget.isShowWidget == true ?
+                      FileDescription(
                         description: {
                           if (!_isGif)
                             'Video duration': '${((_controller?.value.duration.inMilliseconds ?? 0) / 1000).toStringAsFixed(2)}s',
@@ -129,8 +135,8 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                           'Video dimension': _fileDimension.toString(),
                           'Video size': _fileMbSize,
                         },
-                      )
-                          : const SizedBox.shrink(),
+                      ) :
+                          const SizedBox.shrink(),
                     ),
                   ],
                 ),
@@ -138,8 +144,7 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
             ],
           ),
         ),
-          bottomNavigationBar: widget.title
-              ? Container(
+        bottomNavigationBar: widget.isShowWidget == true ? Container(
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
@@ -172,10 +177,21 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                   flex: 2,
                   child: TextButton(
                     onPressed: () async {
-                      await FirebaseUpload().uploadFileInStorage(file: widget.video,type: "Videos",context: context,);
+                      setState(() {
+                        _isLoading = true;
+                      });
 
-                    },
-                    child: Text(
+                      await FirebaseUpload().uploadFileInStorage(file: widget.video, type: "Videos", context: context,);
+
+                      setState(() {
+                        _isLoading = false;
+                      });
+
+                      Get.off(const MyWorkTab(index: 1));
+                     },
+                    child: _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : Text(
                       "Save",
                       style: TextStyle(
                         color: const CropGridStyle().selectedBoundariesColor,
@@ -186,8 +202,7 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                 ),
               ],
             ),
-          )
-              : const SizedBox.shrink()
+          ) : const SizedBox.shrink()
       ),
     );
   }

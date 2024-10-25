@@ -143,7 +143,10 @@ class _FileViewState extends State<FileView> {
                   Expanded(
                     flex: 1,
                     child: IconButton(
-                      onPressed: () { _handleEdit(pickedMediaStory[pageController.page!.toInt()]); },
+                      onPressed: () {
+                        print("Number ==> ${pickedMediaStory[pageController.page!.toInt()]}");
+                        _handleEdit(pickedMediaStory[pageController.page!.toInt()], pageController.page!.toInt());
+                        },
                       icon: const Center(
                         child: Text(
                           "Edit",
@@ -178,7 +181,6 @@ class _FileViewState extends State<FileView> {
                           isLoadingUpload = false;
                         });
 
-
                         Get.off(const StoryViewScreen());
 
                       },
@@ -207,14 +209,16 @@ class _FileViewState extends State<FileView> {
         duration.inSeconds.remainder(60).toString().padLeft(2, '0')
       ].join(":");
 
-  void _handleEdit(StoryTypeModel storyItems) {
+  void _handleEdit(StoryTypeModel storyItems, int index) {
     if (storyItems.story.contains('.jpg') || storyItems.story.contains('.png') || storyItems.story.contains('.jpeg')) {
-      Get.to(ImageEditor(file: File(storyItems.story)));
+      Get.to(ImageEditor(imageFile: File(storyItems.story),audioFile: (file) {},));
     } else if (storyItems.story.contains('.mp4') || storyItems.story.contains('.mov') || storyItems.story.contains('.avi') ||
         storyItems.story.contains('.mp3') || storyItems.story.contains('.mkv')) {
       Get.to(VideoEditor(
-        pickedFile: File(storyItems.story),
-        videoFile: (file) { pickedMediaStory.add(StoryTypeModel( story: file, type: StoryType.video,)); },
+        videoFile: File(storyItems.story),
+        videoFileFunction: (file) {
+            pickedMediaStory[index] = StoryTypeModel(story: file, type: StoryType.video);
+          },
         isStory: true,
       ));
     } else {
@@ -239,7 +243,6 @@ class _FileViewState extends State<FileView> {
             alignment: Alignment.center,
             children: [
               VideoPlayer(_controller!),
-
               Positioned(
                 bottom: 20,
                 child: IconButton(

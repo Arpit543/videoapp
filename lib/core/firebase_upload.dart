@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:videoapp/main.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
 import 'package:videoapp/ui/view/splash_screen.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
@@ -38,23 +39,30 @@ class FirebaseUpload {
   int lenImages = 0;
   int lenVideos = 0;
 
-  Future<void> uploadFileInStorage({required File file, required String type, required BuildContext context}) async {
-    String fileName = file.path.split("/").last;
-    Reference storageRef = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/$type/$fileName");
-
+  Future<void> uploadFileInStorage({required File file,required String type,required BuildContext context,}) async {
     try {
+      String fileName = file.path.split("/").last;
+      Reference storageRef = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/$type/$fileName");
+
       UploadTask uploadTask = storageRef.putFile(file);
+
       uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
         double progress = snapshot.bytesTransferred / snapshot.totalBytes;
-        print('Upload Progress: ${(progress * 100).toStringAsFixed(2)}%');
+        debugPrint("File upload progress ==> ${(progress * 100).toStringAsFixed(2)}%");
       });
 
-      await uploadTask;
-      print("Uploaded");
+      TaskSnapshot taskSnapshot = await uploadTask;
+
+      String downloadUrl = await taskSnapshot.ref.getDownloadURL();
+      debugPrint("Download URL: $downloadUrl");
+
+      scaffoldMessengerKey.currentState?.showSnackBar(const SnackBar(content: Text("Uploaded successfully!")));
     } catch (e) {
-      print("Not Uploaded");
+      debugPrint("Upload error: $e");
+      scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text("Upload failed: $e")));
     }
   }
+
 
   Future<void> uploadListInStorage({required List<String> images,required String type,required BuildContext context,}) async {
     final storage = FirebaseStorage.instance;
@@ -75,7 +83,6 @@ class FirebaseUpload {
 
         await uploadTask;
 
-        print("131sf31ad35gf5d313d13");
         showSnackBar(message: 'Story uploaded successfully!', context: context, isError: false);
        } catch (e) {
         showSnackBar(message: 'Failed to upload $imagePath', context: context, isError: true);
@@ -86,7 +93,6 @@ class FirebaseUpload {
   Future<void> deleteImageOrVideo({required File url,required String type,required BuildContext context}) async {
     try{
       String fileName = url.path.split("/").last;
-      print("Filename ==> $fileName");
       FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/$type/$fileName").delete();
       showSnackBar(message: 'File Deleted successfully!', context: context, isError: false);
     } catch(e){
@@ -240,7 +246,7 @@ class FirebaseUpload {
             Get.offAll(const HomeScreen());
           });
         } else {
-          throw Exception("User data not found in Realtime Database");
+          showSnackBar(message: 'User data not found in Realtime Database',context: context,isError: true,);
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -269,20 +275,6 @@ class FirebaseUpload {
       if (kDebugMode) {
         print('Error during logout: $e');
       }
-    }
-  }
-
-/*  Reference storageRef = storage.ref().child("${auth.currentUser!.uid}/$type/$fileName");
-  deleteStoryAfterOneMinute(storageRef);*/
-
-  Future<void> deleteStoryAfterOneMinute(Reference storageRef) async {
-    await Future.delayed(const Duration(minutes: 1));
-
-    try {
-      await storageRef.delete();
-      print("File deleted successfully after 1 minute.");
-    } catch (e) {
-      print("Error deleting file: $e");
     }
   }
 }

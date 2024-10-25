@@ -7,10 +7,11 @@ import 'package:videoapp/core/model/song_model.dart';
 
 class AudioTrimmerViewDemo extends StatefulWidget {
   final Song song;
-  final File videoFile;
+  final File audioFileForTrim;
+  final bool isImage;
   final Function(String file) audioFile;
 
-  const AudioTrimmerViewDemo({required this.song, super.key, required this.videoFile, required this.audioFile});
+  const AudioTrimmerViewDemo({required this.song, super.key, required this.audioFileForTrim, required this.audioFile, required this.isImage});
 
   @override
   State<AudioTrimmerViewDemo> createState() => _AudioTrimmerViewDemoState();
@@ -21,7 +22,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
 
   bool _progressVisibility = false;
   bool isLoading = false;
-  Song? data;
+  late Song? data;
   String audioPath = "";
 
   double startValue = 0.0;
@@ -41,7 +42,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
     setState(() {
       isLoading = true;
     });
-    await _trimmer.loadAudio(audioFile: widget.videoFile);
+    await _trimmer.loadAudio(audioFile: widget.audioFileForTrim);
     setState(() {
       isLoading = false;
     });
@@ -73,7 +74,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
             _progressVisibility = false;
           });
           Get.snackbar("Error", "Failed to trim audio.");
-          return;
+          return "";
         }
 
         debugPrint('OUTPUT PATH: $outputPath');
@@ -84,7 +85,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
             _progressVisibility = false;
           });
           Get.snackbar("Error", "Trimmed audio file not found.");
-          return;
+          return "";
         }
 
         setState(() {
@@ -114,6 +115,15 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: InkWell(
+            onTap: () {
+              Get.back();
+              _trimmer.audioPlayer!.pause();
+              _trimmer.audioPlayer!.dispose();
+            },
+            child: const Icon(Icons.arrow_back,color: Colors.black,),
+        ),
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           isLoading ? const SizedBox.shrink() :
@@ -121,7 +131,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.teal.shade50,
             ),
-            onPressed: _progressVisibility ? null : (){
+            onPressed: _progressVisibility ? null : () {
               _saveAudio(context);
             },
             child: const Text(

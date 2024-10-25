@@ -11,7 +11,8 @@ import '../../../core/model/song_model.dart';
 
 class FindSong extends StatefulWidget {
   final Function(String file) audioFile;
-  const FindSong({super.key, required this.audioFile});
+  final bool isImageOrVideo;
+  const FindSong({super.key, required this.audioFile, required this.isImageOrVideo});
 
   @override
   State<FindSong> createState() => _FindSongState();
@@ -216,7 +217,7 @@ class _FindSongState extends State<FindSong> {
         final File audioFile = File(audioPath);
         await audioFile.writeAsBytes(response.bodyBytes).then((_) async {
           Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (context) => AudioTrimmerViewDemo(videoFile: audioFile, song: map, audioFile: (file) {
+              MaterialPageRoute(builder: (context) => AudioTrimmerViewDemo(audioFileForTrim: audioFile, isImage: widget.isImageOrVideo, song: map, audioFile: (file) {
                 print("come back 123 $file");
                 widget.audioFile(file);
               })));
