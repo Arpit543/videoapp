@@ -18,12 +18,16 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
+GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      scaffoldMessengerKey: scaffoldMessengerKey,
+      navigatorKey: navigatorKey,
       title: 'Video App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

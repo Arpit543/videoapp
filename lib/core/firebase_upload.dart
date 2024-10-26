@@ -5,13 +5,26 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:videoapp/main.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
 import 'package:videoapp/ui/view/splash_screen.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
 
 import '../ui/view/auth_pages/login.dart';
-import '../ui/view/story/story_view.dart';
 import 'constants.dart';
+
+
+///   Upload Image n Video to Firebase using [uploadFileInStorage]
+///   Upload Image n Video to Firebase using [uploadListInStorage]
+///   Fetch Story List from Firebase Storage using [fetchStoryList]
+///   Fetch Image from Firebase Storage using [fetchImagesList]
+///   Fetch Video from Firebase Storage using [fetchVideosList]
+///   Function to get image [getImageData]
+///   Function to get video [getVideoData]
+///   Function to get Story [getStoryData]
+///   Register User With Email n Password [registerUser]
+///   Login with Email n Password [userLogin]
+///   Logout Your Session [logout]
 
 class FirebaseUpload {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -26,20 +39,31 @@ class FirebaseUpload {
   int lenImages = 0;
   int lenVideos = 0;
 
-  ///   Upload Image n Video to Firebase using [uploadFileInStorage]
-  Future<void> uploadFileInStorage({required File file, required String type, required BuildContext context}) async {
-    String fileName = file.path.split("/").last;
-    Reference storageRef = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/$type/$fileName");
-
+  Future<void> uploadFileInStorage({required File file,required String type,required BuildContext context,}) async {
     try {
-      storageRef.putFile(file);
-      showSnackBar(message: 'File Edited successfully',context: context,isError: false);
+      String fileName = file.path.split("/").last;
+      Reference storageRef = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/$type/$fileName");
+
+      UploadTask uploadTask = storageRef.putFile(file);
+
+      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+        double progress = snapshot.bytesTransferred / snapshot.totalBytes;
+        debugPrint("File upload progress ==> ${(progress * 100).toStringAsFixed(2)}%");
+      });
+
+      TaskSnapshot taskSnapshot = await uploadTask;
+
+      String downloadUrl = await taskSnapshot.ref.getDownloadURL();
+      debugPrint("Download URL: $downloadUrl");
+
+      scaffoldMessengerKey.currentState?.showSnackBar(const SnackBar(content: Text("Uploaded successfully!")));
     } catch (e) {
-      showSnackBar(message: 'Unable to Edit File', context: context, isError: true);
+      debugPrint("Upload error: $e");
+      scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text("Upload failed: $e")));
     }
   }
 
-  ///   Upload Image n Video to Firebase using [uploadListInStorage]
+
   Future<void> uploadListInStorage({required List<String> images,required String type,required BuildContext context,}) async {
     final storage = FirebaseStorage.instance;
     final auth = FirebaseAuth.instance;
@@ -54,18 +78,25 @@ class FirebaseUpload {
 
         uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
           double progress = 100.0 * (snapshot.bytesTransferred / snapshot.totalBytes);
-          print('Upload of $fileName is $progress% complete.');
+          debugPrint("Progress ==> $progress");
         });
 
-        TaskSnapshot snapshot = await uploadTask;
-
-        String downloadUrl = await snapshot.ref.getDownloadURL();
+        await uploadTask;
 
         showSnackBar(message: 'Story uploaded successfully!', context: context, isError: false);
        } catch (e) {
-        print(e);
         showSnackBar(message: 'Failed to upload $imagePath', context: context, isError: true);
       }
+    }
+  }
+
+  Future<void> deleteImageOrVideo({required File url,required String type,required BuildContext context}) async {
+    try{
+      String fileName = url.path.split("/").last;
+      FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/$type/$fileName").delete();
+      showSnackBar(message: 'File Deleted successfully!', context: context, isError: false);
+    } catch(e){
+      showSnackBar(message: 'Something went wrong!', context: context, isError: false);
     }
   }
 
@@ -85,7 +116,6 @@ class FirebaseUpload {
     }
   }
 
-  ///   Fetch Image from Firebase Storage using [fetchImagesList]
   Future<List<String>> fetchImagesList() async {
     try {
       final storageRefImages = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/Images");
@@ -102,7 +132,6 @@ class FirebaseUpload {
     }
   }
 
-  ///   Fetch Video from Firebase Storage using [fetchVideosList]
   Future<List<String>> fetchVideosList() async {
     try {
       final storageRefVideos = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/Videos");
@@ -120,7 +149,6 @@ class FirebaseUpload {
     }
   }
 
-  ///   Function [getImageData] to get image
   Future<void> getImageData() async {
     final imageUrls = await fetchImagesList();
 
@@ -130,7 +158,6 @@ class FirebaseUpload {
     } else {}
   }
 
-  ///   Function [getVideoData] to get video
   Future<void> getVideoData() async {
     final videoURL = await fetchVideosList();
 
@@ -140,7 +167,6 @@ class FirebaseUpload {
     } else {}
   }
 
-  ///   Function [getStoryData] to get video
   Future<List<String>> getStoryData() async {
     final videoURL = await fetchStoryList();
 
@@ -152,7 +178,6 @@ class FirebaseUpload {
     return videoURLs;
   }
 
-  ///   Register User With Email n Password
   Future<void> registerUser({required String name, required String email, required String password, required String cPassword, required BuildContext context,}) async {
     if (password != cPassword) {
       if (kDebugMode) {
@@ -199,7 +224,6 @@ class FirebaseUpload {
     }
   }
 
-  ///   Login with Email n Password
   Future<void> userLogin({required String email,required String password,required BuildContext context,}) async {
     try {
       UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -222,7 +246,7 @@ class FirebaseUpload {
             Get.offAll(const HomeScreen());
           });
         } else {
-          throw Exception("User data not found in Realtime Database");
+          showSnackBar(message: 'User data not found in Realtime Database',context: context,isError: true,);
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -242,7 +266,6 @@ class FirebaseUpload {
     }
   }
 
-  ///   Logout Your Session
   Future<void> logout(BuildContext context) async {
     try {
       await Constants.clear();

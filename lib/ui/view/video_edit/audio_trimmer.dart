@@ -1,20 +1,17 @@
 import 'dart:io';
-import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:just_audio/just_audio.dart';
+import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:easy_audio_trimmer/easy_audio_trimmer.dart';
 import 'package:videoapp/core/model/song_model.dart';
-import 'package:videoapp/ui/view/video_edit/video_editor.dart';
 
 class AudioTrimmerViewDemo extends StatefulWidget {
   final Song song;
-  final File file;
-  final Duration duration;
+  final File audioFileForTrim;
+  final bool isImage;
+  final Function(String file) audioFile;
 
-  const AudioTrimmerViewDemo({required this.song, super.key, required this.file, required this.duration});
+  const AudioTrimmerViewDemo({required this.song, super.key, required this.audioFileForTrim, required this.audioFile, required this.isImage});
 
   @override
   State<AudioTrimmerViewDemo> createState() => _AudioTrimmerViewDemoState();
@@ -22,15 +19,15 @@ class AudioTrimmerViewDemo extends StatefulWidget {
 
 class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
   final Trimmer _trimmer = Trimmer();
+
   bool _progressVisibility = false;
   bool isLoading = false;
-  Song? data;
-  final AudioPlayer _player = AudioPlayer();
+  late Song? data;
   String audioPath = "";
 
   double startValue = 0.0;
-  double endValue = 30.0;
-  Duration totalDuration = Duration.zero;
+  double endValue = 0.0;
+
 
   @override
   void initState() {
@@ -41,50 +38,64 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
     },);
   }
 
-  Future<void> _loadAudio() async {
+  void _loadAudio() async {
     setState(() {
       isLoading = true;
     });
-    print("Artwork : ${data!.artwork}");
-      await _trimmer.loadAudio(audioFile: widget.file);
-
-      // Get the total duration
-      Duration? duration = await _trimmer.audioPlayer!.getDuration();
-      print("Total Duration: ${duration?.inSeconds} seconds");
-
-      startValue = 0.0;
-      endValue = 30;//(duration!.inSeconds > widget.duration.inSeconds ? startValue + widget.duration.inSeconds : duration!.inSeconds).toDouble();
-      setState(() {
-        totalDuration = duration!;
-        endValue = totalDuration.inSeconds.toDouble(); // Set endValue to total duration
-        isLoading = false;
-      });
-
-      // Start playing the audio as soon as it's loaded
-      await _trimmer.audioPlaybackControl(startValue: startValue, endValue: endValue);
+    await _trimmer.loadAudio(audioFile: widget.audioFileForTrim);
+    setState(() {
+      isLoading = false;
+    });
   }
 
-  Future<void> _saveAudio() async {
+  Future<void> _saveAudio(BuildContext context) async {
     setState(() {
       _progressVisibility = true;
     });
 
+    final Directory? externalDir = await getExternalStorageDirectory();
+    final String basePath = '${externalDir?.parent.parent.parent.parent.path}/Download/';
 
-    final Directory appDir = await getApplicationDocumentsDirectory();
-    final String outputPath = '${appDir.path}/trimmed_audio_${DateTime.now().millisecondsSinceEpoch}.mp3';
-
-    final String command = '-i "$audioPath" -ss $startValue -to $endValue -c copy "$outputPath"';
-
-    FFmpegKit.execute(command).then((session) async {
-      final returnCode = await session.getReturnCode();
-      if (ReturnCode.isSuccess(returnCode)) {
-      } else {
-        print("Failed to trim audio");
-      }
+    if (externalDir == null || !await Directory(basePath).exists()) {
       setState(() {
         _progressVisibility = false;
       });
-    });
+      Get.snackbar("Error", "External storage not available.");
+      return;
+    }
+
+    _trimmer.saveTrimmedAudio(
+      startValue: startValue,
+      endValue: endValue,
+      audioFileName: DateTime.now().millisecondsSinceEpoch.toString(),
+      onSave: (outputPath) {
+        if (outputPath == null || outputPath.isEmpty) {
+          setState(() {
+            _progressVisibility = false;
+          });
+          Get.snackbar("Error", "Failed to trim audio.");
+          return "";
+        }
+
+        debugPrint('OUTPUT PATH: $outputPath');
+
+        final File trimmedAudioFile = File(outputPath);
+        if (!trimmedAudioFile.existsSync()) {
+          setState(() {
+            _progressVisibility = false;
+          });
+          Get.snackbar("Error", "Trimmed audio file not found.");
+          return "";
+        }
+
+        setState(() {
+          _progressVisibility = false;
+        });
+
+        widget.audioFile(trimmedAudioFile.path);
+        Navigator.pop(context);
+      },
+    );
   }
 
   @override
@@ -104,6 +115,15 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: InkWell(
+            onTap: () {
+              Get.back();
+              _trimmer.audioPlayer!.pause();
+              _trimmer.audioPlayer!.dispose();
+            },
+            child: const Icon(Icons.arrow_back,color: Colors.black,),
+        ),
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           isLoading ? const SizedBox.shrink() :
@@ -111,7 +131,9 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.teal.shade50,
             ),
-            onPressed: _progressVisibility ? null : _saveAudio,
+            onPressed: _progressVisibility ? null : () {
+              _saveAudio(context);
+            },
             child: const Text(
               "SAVE",
               style: TextStyle(color: Colors.lightBlueAccent),
@@ -119,9 +141,8 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
           ),
         ],
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+      body: isLoading ? const Center(child: CircularProgressIndicator()) :
+      SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Center(
           child: Container(
@@ -174,7 +195,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                   backgroundColor: Colors.teal,
                   barColor: Colors.yellow,
                   showDuration: true,
-                  maxAudioLength: const Duration(seconds: 60),
+                  maxAudioLength: const Duration(seconds: 30),
                   editorProperties: const TrimEditorProperties(
                     circleSize: 5.0,
                     circleSizeOnDrag: 8.0,
@@ -192,22 +213,16 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                   areaProperties: const FixedTrimAreaProperties(),
                   onChangeStart: (value) {
                     setState(() {
-                      // value is a percentage (0 to 100), so we scale it to totalDuration
-                      startValue = (value / 100) * totalDuration.inSeconds;
-                      print("Start Value: $startValue");
+                      startValue = value;
                     });
 
-                    // Restart audio playback from updated startValue
                     _trimmer.audioPlaybackControl(startValue: startValue, endValue: endValue);
                   },
                   onChangeEnd: (value) {
                     setState(() {
-                      // value is a percentage (0 to 100), so we scale it to totalDuration
-                      endValue = (value / 100) * totalDuration.inSeconds;
-                      print("End Value: $endValue");
+                      endValue = value;
                     });
 
-                    // Restart audio playback from updated startValue
                     _trimmer.audioPlaybackControl(startValue: startValue, endValue: endValue);
                   },
                 ),

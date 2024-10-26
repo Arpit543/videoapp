@@ -3,27 +3,28 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:fraction/fraction.dart';
+import 'package:get/get.dart';
 import 'package:path/path.dart' as path;
 import 'package:video_editor/video_editor.dart';
 import 'package:video_player/video_player.dart';
 import 'package:videoapp/core/firebase_upload.dart';
-import 'package:videoapp/ui/view/home_screen.dart';
 
-Future<void> _getImageDimension(File file,
-    {required Function(Size) onResult}) async {
+import '../my_work/tab_vew.dart';
+
+Future<void> _getImageDimension(File file, {required Function(Size) onResult}) async {
   var decodedImage = await decodeImageFromList(file.readAsBytesSync());
   onResult(Size(decodedImage.width.toDouble(), decodedImage.height.toDouble()));
 }
 
-String _fileMBSize(File file) =>
-    ' ${(file.lengthSync() / (1024 * 1024)).toStringAsFixed(1)} MB';
+String _fileMBSize(File file) => ' ${(file.lengthSync() / (1024 * 1024)).toStringAsFixed(1)} MB';
 
 /// Class to show Video after edit [VideoResultPopup]
+
 class VideoResultPopup extends StatefulWidget {
   final File video;
-  final bool title;
+  final bool isShowWidget;
 
-  const VideoResultPopup({super.key, required this.video, required this.title});
+  const VideoResultPopup({super.key, required this.video, required this.isShowWidget});
 
   @override
   State<VideoResultPopup> createState() => _VideoResultPopupState();
@@ -31,41 +32,36 @@ class VideoResultPopup extends StatefulWidget {
 
 class _VideoResultPopupState extends State<VideoResultPopup> {
   VideoPlayerController? _controller;
-  FileImage? _fileImage;
   Size _fileDimension = Size.zero;
   late final bool _isGif = path.extension(widget.video.path).toLowerCase() == ".gif";
   late String _fileMbSize;
-  FirebaseUpload firebaseUpload = FirebaseUpload();
+  bool _isPlaying = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    if (_isGif) {
-      _getImageDimension(
-        widget.video,
-        onResult: (d) => setState(() => _fileDimension = d),
-      );
-    } else {
-      _controller = VideoPlayerController.file(widget.video);
-      _controller?.initialize().then((_) {
-        _fileDimension = _controller?.value.size ?? Size.zero;
-        setState(() {});
-        _controller?.play();
+    _controller = VideoPlayerController.file(widget.video)
+      ..initialize().then((_) {
+        setState(() {
+          _fileDimension = _controller?.value.size ?? Size.zero;
+        });
         _controller?.setLooping(true);
       });
-    }
     _fileMbSize = _fileMBSize(widget.video);
   }
 
   @override
   void dispose() {
-    if (_isGif) {
-      _fileImage?.evict();
-    } else {
-      _controller?.pause();
-      _controller?.dispose();
-    }
+    _controller?.dispose();
     super.dispose();
+  }
+
+  void _togglePlayPause() {
+    setState(() {
+      _isPlaying ? _controller?.pause() : _controller?.play();
+      _isPlaying = !_isPlaying;
+    });
   }
 
   @override
@@ -73,116 +69,140 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.white,
-        appBar: AppBar(
+        appBar: widget.isShowWidget == true ?
+        AppBar(
           backgroundColor: const Color(0xff6EA9FF),
           elevation: 0,
           iconTheme: const IconThemeData(color: Colors.white),
           centerTitle: true,
-          title: Text(
-            widget.title ? "Edited Video" : "",
-            style: const TextStyle(
+          title: const Text(
+            "Edited Video",
+            style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 20,
             ),
           ),
+        ) :
+        AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.black),
         ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(5),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+        body: Padding(
+          padding: const EdgeInsets.all(5),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    AspectRatio(
+                      aspectRatio: _fileDimension.aspectRatio != 0 ? _fileDimension.aspectRatio : _controller!.value.aspectRatio,
+                      child: _isGif ? Image.file(widget.video, fit: BoxFit.cover) : VideoPlayer(_controller!),
+                    ),
+                    if (!_isGif) // Only show for video
+                      GestureDetector(
+                        onTap: _togglePlayPause,
+                        child: AnimatedOpacity(
+                          opacity: _isPlaying ? 0 : 1,
+                          duration: const Duration(milliseconds: 300),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.black54,
+                            ),
+                            padding: const EdgeInsets.all(15),
+                            child: Icon(
+                              _isPlaying ? Icons.pause : Icons.play_arrow,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                          ),
+                        ),
+                      ),
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: widget.isShowWidget == true ?
+                      FileDescription(
+                        description: {
+                          if (!_isGif)
+                            'Video duration': '${((_controller?.value.duration.inMilliseconds ?? 0) / 1000).toStringAsFixed(2)}s',
+                          'Video ratio': Fraction.fromDouble(_fileDimension.aspectRatio).reduce().toString(),
+                          'Video dimension': _fileDimension.toString(),
+                          'Video size': _fileMbSize,
+                        },
+                      ) :
+                          const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        bottomNavigationBar: widget.isShowWidget == true ? Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0xff6EA9FF),
+                  blurRadius: 8,
+                  offset: Offset(0, -2), // Adjust shadow for better effect
+                ),
+              ],
+            ),
+            height: 50,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Expanded(
-                  child: Stack(
-                    alignment: Alignment.bottomLeft,
-                    children: [
-                      AspectRatio( aspectRatio: _fileDimension.aspectRatio != 0 ? _fileDimension.aspectRatio : 1,
-                        child: _isGif ? Image.file(widget.video, fit: BoxFit.cover) : VideoPlayer(_controller!),
+                  flex: 2,
+                  child: TextButton(
+                    onPressed: () => Get.back(),
+                    child: const Text(
+                      "Discard",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xff6EA9FF),
                       ),
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: widget.title
-                            ? FileDescription(
-                                description: {
-                                  if (!_isGif)
-                                    'Video duration': '${((_controller?.value.duration.inMilliseconds ?? 0) / 1000).toStringAsFixed(2)}s',
-                                  'Video ratio': Fraction.fromDouble(_fileDimension.aspectRatio).reduce().toString(),
-                                  'Video dimension': _fileDimension.toString(),
-                                  'Video size': _fileMbSize,
-                                },
-                              )
-                            : const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: TextButton(
+                    onPressed: () async {
+                      setState(() {
+                        _isLoading = true;
+                      });
+
+                      await FirebaseUpload().uploadFileInStorage(file: widget.video, type: "Videos", context: context,);
+
+                      setState(() {
+                        _isLoading = false;
+                      });
+
+                      Get.off(const MyWorkTab(index: 1));
+                     },
+                    child: _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : Text(
+                      "Save",
+                      style: TextStyle(
+                        color: const CropGridStyle().selectedBoundariesColor,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-        ),
-        bottomNavigationBar: widget.title
-            ? Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0xff6EA9FF),
-                      blurRadius: 8,
-                      offset: Offset(0, -2), // Adjust shadow for better effect
-                    ),
-                  ],
-                ),
-                height: 50,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text(
-                          "Discard",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xff6EA9FF),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: TextButton(
-                        onPressed: () {
-                          firebaseUpload.uploadFileInStorage(
-                            file: widget.video,
-                            type: "Videos",
-                            context: context,
-                          );
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const HomeScreen()),
-                            (route) => false,
-                          );
-                        },
-                        child: Text(
-                          "Save",
-                          style: TextStyle(
-                            color:
-                                const CropGridStyle().selectedBoundariesColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : const SizedBox.shrink()//height: 50),
+          ) : const SizedBox.shrink()
       ),
     );
   }

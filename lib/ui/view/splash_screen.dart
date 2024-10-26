@@ -4,9 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:videoapp/core/constants.dart';
 import 'package:videoapp/ui/view/auth_pages/login.dart';
-import 'package:videoapp/ui/view/home_screen.dart';
-
-import '../widget/tab.dart';
+import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -57,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _navigateToNextScreen() {
     final isLoggedIn = Constants.getBool(Constants.isLogin) == true;
-    Get.offAll(isLoggedIn ? const TabScreen() : const Login());
+    Get.offAll(isLoggedIn ? const HomeScreen() : const Login());
   }
 
   @override

@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
@@ -17,11 +19,59 @@ class MyVideosWork extends StatefulWidget {
 class _MyVideosWorkState extends State<MyVideosWork> {
   FirebaseUpload upload = FirebaseUpload();
   late Future<void> _dataFutureVideos;
+  final Map<String, String> _thumbnailCache = {};
+  final Map<String, File> _videoFileCache = {};
 
   @override
   void initState() {
     _dataFutureVideos = upload.getVideoData();
     super.initState();
+  }
+
+  Future<String?> _getCachedThumbnail(String videoUrl) async {
+    if (_thumbnailCache.containsKey(videoUrl)) {
+      return _thumbnailCache[videoUrl];
+    }
+
+    final thumbnailPath = await VideoThumbnail.thumbnailFile(
+      video: videoUrl,
+      imageFormat: ImageFormat.JPEG,
+      maxHeight: 200,
+      quality: 100,
+    );
+
+    if (thumbnailPath != null) {
+      _thumbnailCache[videoUrl] = thumbnailPath;
+    }
+
+    return thumbnailPath;
+  }
+
+  Future<File> _getCachedVideoFile(String videoUrl) async {
+    if (_videoFileCache.containsKey(videoUrl)) {
+      return _videoFileCache[videoUrl]!;
+    }
+
+    final file = await CachedFileHelper.urlToFile(videoUrl);
+    _videoFileCache[videoUrl] = file;
+    return file;
+  }
+
+  /// Function to delete video from Firebase Storage
+  Future<void> _deleteVideo(String videoUrl, BuildContext context) async {
+    try {
+      final FirebaseAuth auth = FirebaseAuth.instance;
+      String fileName = videoUrl.split('%2F').last.split('?').first;
+      print(fileName);
+      final storageRef = FirebaseStorage.instance.ref("${auth.currentUser!.uid}/Videos/$fileName");
+      await storageRef.delete();
+
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Video deleted successfully!')),);
+      await upload.getVideoData();
+      setState(() {});
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting video: $e')),);
+    }
   }
 
   @override
@@ -55,21 +105,43 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                           childAspectRatio: 0.75,
                         ),
                         itemBuilder: (context, index) {
+                          final videoUrl = upload.videoURLs[index];
+                          print(videoUrl);
                           return FutureBuilder<String?>(
-                            future: VideoThumbnail.thumbnailFile(
-                              video: upload.videoURLs[index],
-                              imageFormat: ImageFormat.JPEG,
-                              maxHeight: 200,
-                              quality: 100,
-                            ),
-                            builder: (context, snapshot) {
-                              if (snapshot.hasError) {
+                            future: _getCachedThumbnail(videoUrl),
+                            builder: (context, thumbnailSnapshot) {
+                              if (thumbnailSnapshot.hasError) {
                                 return const Icon(Icons.error, color: Colors.red);
-                              } else if (snapshot.hasData) {
+                              } else if (thumbnailSnapshot.hasData) {
                                 return GestureDetector(
                                   onTap: () async {
-                                    File file = await CachedFileHelper.urlToFile(upload.videoURLs[index]);
-                                    Get.to(VideoResultPopup(video: file, title: false));
+                                    final file = await _getCachedVideoFile(videoUrl);
+                                    Get.to(VideoResultPopup(video: file,isShowWidget: false,));
+                                  },
+                                  onLongPress: () async {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Delete Video'),
+                                        content: const Text('Are you sure you want to delete this video?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                            child: const Text('Cancel'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () async {
+                                              Navigator.of(context).pop();
+                                              print("Url :- ${videoUrl.tr}");
+                                              await _deleteVideo(videoUrl, context);
+                                            },
+                                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
                                   },
                                   child: Container(
                                     decoration: BoxDecoration(
@@ -86,7 +158,7 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(12),
                                       child: Image.file(
-                                        File(snapshot.data!),
+                                        File(thumbnailSnapshot.data!),
                                         fit: BoxFit.cover,
                                       ),
                                     ),
@@ -134,3 +206,5 @@ class CachedFileHelper {
     return file;
   }
 }
+
+

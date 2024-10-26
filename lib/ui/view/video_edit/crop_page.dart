@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fraction/fraction.dart';
+import 'package:get/get.dart';
 import 'package:video_editor/video_editor.dart';
 
 class CropPage extends StatelessWidget {
@@ -107,7 +108,7 @@ class CropPage extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Get.back(),
                   child: const Center(
                     child: Text(
                       "Cancel",
@@ -121,7 +122,7 @@ class CropPage extends StatelessWidget {
                 child: TextButton(
                   onPressed: () {
                     controller.applyCacheCrop();
-                    Navigator.pop(context);
+                    Get.back();
                   },
                   child: Center(
                     child: Text(

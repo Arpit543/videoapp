@@ -11,6 +11,7 @@ import 'package:videoapp/ui/view/splash_screen.dart';
 import 'package:videoapp/ui/view/story/file_view.dart';
 import 'package:videoapp/ui/view/story/story_view.dart';
 import 'package:videoapp/ui/view/video_edit/video_editor.dart';
+import 'package:videoapp/ui/widget/common_snackbar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -50,10 +51,10 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           galleryFile = File(pickedFile.path);
         });
-        Navigator.push(context, MaterialPageRoute(builder: (context) => VideoEditor(file: File(pickedFile.path))));
+        Get.to(VideoEditor(videoFile: File(pickedFile.path), videoFileFunction: (String file) {  },isStory: false,));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error picking video: $e')));
+      if(mounted) showSnackBar(context: context, message: "Error picking video: $e");
     }
   }
 
@@ -63,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         cameraFile = File(pickedFile.path);
       });
-      Navigator.push(context, MaterialPageRoute(builder: (context) => ImageEditor(file: cameraFile!)));
+      Get.to(ImageEditor(imageFile: cameraFile!, audioFile: (file) {},));
     }
   }
 
@@ -91,16 +92,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   final path = file.path;
                   if (path != null) {
                     if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png')) {
-                      storyItems.add(StoryTypeModel(story: path, type: StoryType.Image));
-                    } else if (path.endsWith('.mov') || path.endsWith('.mp4') || path.endsWith('.mkv') || path.endsWith('.avi')) {storyItems.add(StoryTypeModel(story: path, type: StoryType.Video));
+                      storyItems.add(StoryTypeModel(story: path, type: StoryType.image));
+                    } else if (path.endsWith('.mov') || path.endsWith('.mp4') || path.endsWith('.mkv') || path.endsWith('.avi')) {
+                      storyItems.add(StoryTypeModel(story: path, type: StoryType.video));
                     }
                   }
                 }
               }
               setState(() {});
-              if (storyItems.isNotEmpty) Navigator.push(context, MaterialPageRoute(builder: (context) => FileView(storyItems: storyItems)));
+              if (storyItems.isNotEmpty) {
+                Get.to(FileView(pickedMedia: storyItems, videoFile: (String file) {  },));
+              }
             } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error picking media: $e')));
+              if(mounted) {
+                showSnackBar(context: context, message: "Error picking media: $e", isError: true);
+              }
             }
           },
           child: const Padding(
@@ -116,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
           InkWell(
             onTap: () {
               Constants.clear();
-              Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context) => const SplashScreen()),(route) => false,);
+              Get.offAll(const SplashScreen());
             },
             child: const Padding(
               padding: EdgeInsets.all(10.0),
@@ -231,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-enum StoryType { Image, Video }
+enum StoryType { image, video }
 
 
 class StoryTypeModel {
