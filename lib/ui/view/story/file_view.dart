@@ -27,7 +27,6 @@ class _FileViewState extends State<FileView> {
   int length = 0;
   bool _showTrimSlider = false;
 
-
   @override
   void initState() {
     super.initState();
@@ -59,7 +58,7 @@ class _FileViewState extends State<FileView> {
         isLoadingVideo = false;
         _controller!.play();
         length = _controller!.value.duration.inSeconds;
-        if(length > 30) {
+        if (length > 30) {
           _showTrimSlider = true;
         }
         print("Length :- $length");
@@ -115,12 +114,13 @@ class _FileViewState extends State<FileView> {
                 },
               ),
             ),
-            /*if (_showTrimSlider) Flexible(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: _trimSlider(_controllerEdit),
+            if (_showTrimSlider)
+              SizedBox(
+                height: 100,
+                child: Column(
+                  children: _trimSlider(_controllerEdit),
+                ),
               ),
-            ),*/
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: SmoothPageIndicator(
@@ -169,7 +169,10 @@ class _FileViewState extends State<FileView> {
                     child: IconButton(
                       onPressed: () {
                         if (length > 30) {
-                          showSnackBar(context: context, message: "Please select video length up to 30 seconds");
+                          showSnackBar(
+                              context: context,
+                              message:
+                                  "Please select video length up to 30 seconds");
                         } else {
                           _handleEdit(widget.storyItems);
                         }
@@ -178,7 +181,8 @@ class _FileViewState extends State<FileView> {
                         child: Text(
                           "Edit",
                           style: TextStyle(
-                            color: const CropGridStyle().selectedBoundariesColor,
+                            color:
+                                const CropGridStyle().selectedBoundariesColor,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -195,54 +199,45 @@ class _FileViewState extends State<FileView> {
   }
 
   String formatter(Duration duration) => [
-    duration.inMinutes.remainder(60).toString().padLeft(2, '0'),
-    duration.inSeconds.remainder(60).toString().padLeft(2, '0')
-  ].join(":");
+        duration.inMinutes.remainder(60).toString().padLeft(2, '0'),
+        duration.inSeconds.remainder(60).toString().padLeft(2, '0')
+      ].join(":");
 
   List<Widget> _trimSlider(VideoEditorController controllerEdit) {
+    final int duration = controllerEdit.videoDuration.inSeconds;
+    final double pos = controllerEdit.trimPosition * duration;
     return [
-      AnimatedBuilder(
-        animation: Listenable.merge([
-          controllerEdit,
-          controllerEdit.video,
-        ]),
-        builder: (_, __) {
-          final int duration = controllerEdit.videoDuration.inSeconds;
-          final double pos = controllerEdit.trimPosition * duration;
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 50),
-            child: Row(
-              children: [
-                Text(
-                  formatter(Duration(seconds: pos.toInt())),
-                  style: const TextStyle(fontWeight: FontWeight.bold), // Improved text visibility
-                ),
-                const Expanded(child: SizedBox()),
-                const Expanded(child: SizedBox()),
-                AnimatedOpacity(
-                  opacity: controllerEdit.isTrimming ? 1 : 0,
-                  duration: kThemeAnimationDuration,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        formatter(controllerEdit.startTrim),
-                        style: const TextStyle(color: Colors.black), // Consistent text color
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        formatter(controllerEdit.endTrim),
-                        style: const TextStyle(color: Colors.black), // Consistent text color
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+      // Row(
+      //   children: [
+      //     Text(
+      //       formatter(Duration(seconds: pos.toInt())),
+      //       style: const TextStyle(
+      //           fontWeight: FontWeight.bold), // Improved text visibility
+      //     ),
+      //     // const Expanded(child: SizedBox()),
+      //     // const Expanded(child: SizedBox()),
+      //     AnimatedOpacity(
+      //       opacity: controllerEdit.isTrimming ? 1 : 0,
+      //       duration: kThemeAnimationDuration,
+      //       child: Row(
+      //         mainAxisSize: MainAxisSize.min,
+      //         children: [
+      //           Text(
+      //             formatter(controllerEdit.startTrim),
+      //             style: const TextStyle(
+      //                 color: Colors.black), // Consistent text color
+      //           ),
+      //           const SizedBox(width: 10),
+      //           Text(
+      //             formatter(controllerEdit.endTrim),
+      //             style: const TextStyle(
+      //                 color: Colors.black), // Consistent text color
+      //           ),
+      //         ],
+      //       ),
+      //     ),
+      //   ],
+      // ),
       SizedBox(
         width: MediaQuery.of(context).size.width,
         child: TrimSlider(
@@ -262,14 +257,32 @@ class _FileViewState extends State<FileView> {
   void _handleEdit(List<StoryTypeModel> storyItems) {
     for (var item in storyItems) {
       print("URLS : $item");
-      if (item.story.contains('.jpg') || item.story.contains('.png') || item.story.contains('.jpeg')) {
-        Navigator.push(context,MaterialPageRoute(builder: (context) => ImageEditor(file: File(item.story)),),);
+      if (item.story.contains('.jpg') ||
+          item.story.contains('.png') ||
+          item.story.contains('.jpeg')) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ImageEditor(file: File(item.story)),
+          ),
+        );
         break;
-      } else if (item.story.contains('.mp4') || item.story.contains('.mov') || item.story.contains('.avi') || item.story.contains('.mp3') || item.story.contains('.mkv')) {
-        Navigator.push(context,MaterialPageRoute(builder: (context) => VideoEditor(file: File(item.story)),),);
+      } else if (item.story.contains('.mp4') ||
+          item.story.contains('.mov') ||
+          item.story.contains('.avi') ||
+          item.story.contains('.mp3') ||
+          item.story.contains('.mkv')) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoEditor(file: File(item.story)),
+          ),
+        );
         break;
       } else {
-        showSnackBar(context: context, message: "Unsupported file type for editing: $item");
+        showSnackBar(
+            context: context,
+            message: "Unsupported file type for editing: $item");
         break;
       }
     }
