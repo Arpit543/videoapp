@@ -13,11 +13,31 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _opacityAnimation;
+
   @override
   void initState() {
     super.initState();
+    _initializeAnimations();
     _requestPermissions();
+  }
+
+  void _initializeAnimations() {
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _animationController.forward();
   }
 
   Future<void> _requestPermissions() async {
@@ -44,9 +64,14 @@ class _SplashScreenState extends State<SplashScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$message permission is required. Please enable it in settings.'),
+        backgroundColor: Colors.redAccent,
+        content: Text(
+          '$message permission is required. Please enable it in settings.',
+          style: const TextStyle(color: Colors.white),
+        ),
         action: SnackBarAction(
           label: 'Settings',
+          textColor: Colors.white,
           onPressed: () => openAppSettings(),
         ),
       ),
@@ -59,22 +84,36 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.2),
-          child: ClipOval(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Lottie.asset(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF3EADCF), Color(0xFFABE9CD)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: FadeTransition(
+            opacity: _opacityAnimation,
+            child: ClipOval(
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.all(20),
+                child: Lottie.asset(
                   "assets/anim/anim_1.json",
-                  width: 200,
-                  height: 200,
+                  width: 180,
+                  height: 180,
                   fit: BoxFit.cover,
                 ),
-              ],
+              ),
             ),
           ),
         ),

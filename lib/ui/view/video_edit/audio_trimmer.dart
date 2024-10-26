@@ -19,15 +19,12 @@ class AudioTrimmerViewDemo extends StatefulWidget {
 
 class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
   final Trimmer _trimmer = Trimmer();
-
   bool _progressVisibility = false;
   bool isLoading = false;
   late Song? data;
   String audioPath = "";
-
   double startValue = 0.0;
   double endValue = 0.0;
-
 
   @override
   void initState() {
@@ -35,7 +32,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       _loadAudio();
-    },);
+    });
   }
 
   void _loadAudio() async {
@@ -46,6 +43,16 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
     setState(() {
       isLoading = false;
     });
+    _startPlayback();
+  }
+
+  void _startPlayback() {
+    if (_trimmer.audioPlayer != null) {
+      _trimmer.audioPlaybackControl(
+        startValue: startValue,
+        endValue: endValue,
+      );
+    }
   }
 
   Future<void> _saveAudio(BuildContext context) async {
@@ -74,7 +81,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
             _progressVisibility = false;
           });
           Get.snackbar("Error", "Failed to trim audio.");
-          return "";
+          return;
         }
 
         debugPrint('OUTPUT PATH: $outputPath');
@@ -85,7 +92,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
             _progressVisibility = false;
           });
           Get.snackbar("Error", "Trimmed audio file not found.");
-          return "";
+          return;
         }
 
         setState(() {
@@ -100,9 +107,9 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
 
   @override
   void dispose() {
-    if(_trimmer.audioPlayer != null) {
-      _trimmer.audioPlayer!.pause();
-      _trimmer.audioPlayer!.dispose();
+    if (_trimmer.audioPlayer != null) {
+      _trimmer.audioPlayer?.pause();
+      _trimmer.audioPlayer?.dispose();
     }
     _trimmer.dispose();
     super.dispose();
@@ -117,12 +124,12 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
         elevation: 0,
         automaticallyImplyLeading: false,
         leading: InkWell(
-            onTap: () {
-              Get.back();
-              _trimmer.audioPlayer!.pause();
-              _trimmer.audioPlayer!.dispose();
-            },
-            child: const Icon(Icons.arrow_back,color: Colors.black,),
+          onTap: () {
+            Get.back();
+            _trimmer.audioPlayer?.pause();
+            _trimmer.audioPlayer?.dispose();
+          },
+          child: const Icon(Icons.arrow_back, color: Colors.black),
         ),
         iconTheme: const IconThemeData(color: Colors.black),
         actions: [

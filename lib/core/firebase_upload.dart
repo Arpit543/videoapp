@@ -39,7 +39,7 @@ class FirebaseUpload {
   int lenImages = 0;
   int lenVideos = 0;
 
-  Future<void> uploadFileInStorage({required File file,required String type,required BuildContext context,}) async {
+  Future<void> uploadFileInStorage({required File file,required String type,required BuildContext context}) async {
     try {
       String fileName = file.path.split("/").last;
       Reference storageRef = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/$type/$fileName");
@@ -56,13 +56,12 @@ class FirebaseUpload {
       String downloadUrl = await taskSnapshot.ref.getDownloadURL();
       debugPrint("Download URL: $downloadUrl");
 
-      scaffoldMessengerKey.currentState?.showSnackBar(const SnackBar(content: Text("Uploaded successfully!")));
+        /// ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Uploaded successfully!")),);
     } catch (e) {
       debugPrint("Upload error: $e");
-      scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text("Upload failed: $e")));
+        /// ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Upload failed: $e")),);
     }
   }
-
 
   Future<void> uploadListInStorage({required List<String> images,required String type,required BuildContext context,}) async {
     final storage = FirebaseStorage.instance;

@@ -176,19 +176,28 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                 Expanded(
                   flex: 2,
                   child: TextButton(
-                    onPressed: () async {
-                      setState(() {
-                        _isLoading = true;
-                      });
+                      onPressed: () async {
+                        setState(() {
+                          _isLoading = true;
+                        });
 
-                      await FirebaseUpload().uploadFileInStorage(file: widget.video, type: "Videos", context: context,);
-
-                      setState(() {
-                        _isLoading = false;
-                      });
-
-                      Get.off(const MyWorkTab(index: 1));
-                     },
+                        try {
+                          await FirebaseUpload().uploadFileInStorage(
+                            file: widget.video,
+                            type: "Videos",
+                            context: context,
+                          );
+                          Get.offAll(const MyWorkTab(index: 1));
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Upload failed: $e")),
+                          );
+                        } finally {
+                          setState(() {
+                            _isLoading = false;
+                          });
+                        }
+                       },
                     child: _isLoading
                         ? const Center(child: CircularProgressIndicator())
                         : Text(

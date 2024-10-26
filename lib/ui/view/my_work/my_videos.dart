@@ -1,13 +1,13 @@
 import 'dart:io';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
-import 'package:videoapp/ui/view/video_edit/export_result.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import '../../../core/firebase_upload.dart';
+import '../video_edit/export_result.dart';
 
 class MyVideosWork extends StatefulWidget {
   const MyVideosWork({super.key});
@@ -24,8 +24,8 @@ class _MyVideosWorkState extends State<MyVideosWork> {
 
   @override
   void initState() {
-    _dataFutureVideos = upload.getVideoData();
     super.initState();
+    _dataFutureVideos = upload.getVideoData();
   }
 
   Future<String?> _getCachedThumbnail(String videoUrl) async {
@@ -33,44 +33,56 @@ class _MyVideosWorkState extends State<MyVideosWork> {
       return _thumbnailCache[videoUrl];
     }
 
-    final thumbnailPath = await VideoThumbnail.thumbnailFile(
-      video: videoUrl,
-      imageFormat: ImageFormat.JPEG,
-      maxHeight: 200,
-      quality: 100,
-    );
+    try {
+      final thumbnailPath = await VideoThumbnail.thumbnailFile(
+        video: videoUrl,
+        imageFormat: ImageFormat.JPEG,
+        maxHeight: 200,
+        quality: 100,
+      );
 
-    if (thumbnailPath != null) {
-      _thumbnailCache[videoUrl] = thumbnailPath;
+      if (thumbnailPath != null) {
+        _thumbnailCache[videoUrl] = thumbnailPath;
+      }
+
+      return thumbnailPath;
+    } catch (e) {
+      debugPrint('Error generating thumbnail: $e');
+      return null;
     }
-
-    return thumbnailPath;
   }
 
-  Future<File> _getCachedVideoFile(String videoUrl) async {
+  Future<File?> _getCachedVideoFile(String videoUrl) async {
     if (_videoFileCache.containsKey(videoUrl)) {
-      return _videoFileCache[videoUrl]!;
+      return _videoFileCache[videoUrl];
     }
 
-    final file = await CachedFileHelper.urlToFile(videoUrl);
-    _videoFileCache[videoUrl] = file;
-    return file;
+    try {
+      final file = await CachedFileHelper.urlToFile(videoUrl);
+      _videoFileCache[videoUrl] = file;
+      return file;
+    } catch (e) {
+      debugPrint('Error fetching video file: $e');
+      return null;
+    }
   }
 
-  /// Function to delete video from Firebase Storage
   Future<void> _deleteVideo(String videoUrl, BuildContext context) async {
     try {
       final FirebaseAuth auth = FirebaseAuth.instance;
       String fileName = videoUrl.split('%2F').last.split('?').first;
-      print(fileName);
       final storageRef = FirebaseStorage.instance.ref("${auth.currentUser!.uid}/Videos/$fileName");
       await storageRef.delete();
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Video deleted successfully!')),);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Video deleted successfully!')),
+      );
       await upload.getVideoData();
       setState(() {});
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error deleting video: $e')),);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting video: $e')),
+      );
     }
   }
 
@@ -106,7 +118,7 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                         ),
                         itemBuilder: (context, index) {
                           final videoUrl = upload.videoURLs[index];
-                          print(videoUrl);
+                          debugPrint("Fetching video URL: $videoUrl");
                           return FutureBuilder<String?>(
                             future: _getCachedThumbnail(videoUrl),
                             builder: (context, thumbnailSnapshot) {
@@ -116,7 +128,13 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                                 return GestureDetector(
                                   onTap: () async {
                                     final file = await _getCachedVideoFile(videoUrl);
-                                    Get.to(VideoResultPopup(video: file,isShowWidget: false,));
+                                    if (file != null) {
+                                      Get.to(VideoResultPopup(video: file, isShowWidget: false));
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Error loading video file.')),
+                                      );
+                                    }
                                   },
                                   onLongPress: () async {
                                     showDialog(
@@ -126,15 +144,12 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                                         content: const Text('Are you sure you want to delete this video?'),
                                         actions: [
                                           TextButton(
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
+                                            onPressed: () => Navigator.of(context).pop(),
                                             child: const Text('Cancel'),
                                           ),
                                           TextButton(
                                             onPressed: () async {
                                               Navigator.of(context).pop();
-                                              print("Url :- ${videoUrl.tr}");
                                               await _deleteVideo(videoUrl, context);
                                             },
                                             child: const Text('Delete', style: TextStyle(color: Colors.red)),
@@ -197,14 +212,17 @@ class CachedFileHelper {
       return _fileCache[imageUrl]!;
     }
 
-    var response = await http.get(Uri.parse(imageUrl));
-    var documentDirectory = await getTemporaryDirectory();
-    String filePath = '${documentDirectory.path}/${imageUrl.hashCode}.jpg';
-    File file = File(filePath);
-    file = await file.writeAsBytes(response.bodyBytes);
-    _fileCache[imageUrl] = file;
-    return file;
+    try {
+      var response = await http.get(Uri.parse(imageUrl));
+      var documentDirectory = await getTemporaryDirectory();
+      String filePath = '${documentDirectory.path}/${imageUrl.hashCode}.jpg';
+      File file = File(filePath);
+      file = await file.writeAsBytes(response.bodyBytes);
+      _fileCache[imageUrl] = file;
+      return file;
+    } catch (e) {
+      debugPrint('Error downloading video file: $e');
+      throw Exception('Error downloading video file');
+    }
   }
 }
-
-

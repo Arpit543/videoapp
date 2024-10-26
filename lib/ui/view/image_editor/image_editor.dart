@@ -11,6 +11,7 @@ import 'package:pro_image_editor/models/editor_configs/pro_image_editor_configs.
 import 'package:pro_image_editor/modules/main_editor/main_editor.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
+import 'package:videoapp/ui/view/my_work/tab_vew.dart';
 import 'package:videoapp/ui/view/video_edit/find_song.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
 
@@ -66,34 +67,66 @@ class _ImageEditorState extends State<ImageEditor> {
                 tuneEditorCallbacks: const TuneEditorCallbacks(),
                 onImageEditingComplete: (Uint8List bytes) async {
                   setState(() {
-                    isUploading = true;
+                    isUploading = true; // Set uploading state to true
                   });
 
+                  // Convert bytes to a File
                   File editedImageFile = await _convertBytesToFile(bytes);
-                  String finalPath = "";
+                  String? finalPath;
 
                   try {
                     if (audio != null && audio!.path.isNotEmpty) {
-                      finalPath = await addMusicToImage(imagePath: editedImageFile.path, audioPath: audio!.path);
-                      debugPrint("video path $finalPath");
-                      if (finalPath.isNotEmpty) {
-                        await FirebaseUpload().uploadFileInStorage(file: File(finalPath),type: "Videos",context: context,);
+                      // Add music to the edited image if audio is available
+                      finalPath = await addMusicToImage(
+                        imagePath: editedImageFile.path,
+                        audioPath: audio!.path,
+                      );
+
+                      debugPrint("Final video path: $finalPath");
+
+                      if (finalPath != null && finalPath.isNotEmpty) {
+                        // Upload the final video to Firebase
+                        await FirebaseUpload().uploadFileInStorage(
+                          file: File(finalPath),
+                          type: "Videos",
+                          context: context,
+                        );
+                        Get.off(const MyWorkTab(index: 1));
                       } else {
                         debugPrint("Final path is empty. Unable to upload video.");
+                        if (mounted) {
+                          showSnackBar(
+                            message: 'Final path is empty. Unable to upload video.',
+                            context: context,
+                            isError: true,
+                          );
+                        }
                       }
                     } else {
-                      debugPrint("Image path $editedImageFile");
-                      await FirebaseUpload().uploadFileInStorage(file: editedImageFile,type: "Images",context: context,);
+                      // Upload the edited image to Firebase
+                      await FirebaseUpload().uploadFileInStorage(
+                        file: editedImageFile,
+                        type: "Images",
+                        context: context,
+                      );
+
+                      Get.off(const MyWorkTab(index: 0));
                     }
                   } catch (e) {
+                    // Handle any errors during the upload process
                     debugPrint("Error during upload process: $e");
-                    if (mounted) showSnackBar(message: 'An error occurred: $e', context: context, isError: true);
+                    if (mounted) {
+                      showSnackBar(
+                        message: 'An error occurred: $e',
+                        context: context,
+                        isError: true,
+                      );
+                    }
                   } finally {
+                    // Always reset the uploading state and navigate back
                     setState(() {
                       isUploading = false;
                     });
-
-                    Get.off(const HomeScreen());
                   }
                 },
               ),
@@ -105,7 +138,7 @@ class _ImageEditorState extends State<ImageEditor> {
             right: Get.width / 2 - 45,
             child: IconButton(
               icon: const Icon(Icons.audiotrack),
-              color: Colors.grey,
+              color: Colors.white,
               onPressed: () {
                 Navigator.push(
                   context,
@@ -135,7 +168,7 @@ class _ImageEditorState extends State<ImageEditor> {
               builder: (context, value, child) {
                 return IconButton(
                   icon: Icon(value ? Icons.volume_off : Icons.volume_up),
-                  color: Colors.grey,
+                  color: Colors.white,
                   onPressed: () {
                     setState(() {
                       isMute.value = !isMute.value;
@@ -151,8 +184,8 @@ class _ImageEditorState extends State<ImageEditor> {
     );
   }
 
-  /// Add Music to Image
-  Future<String> addMusicToImage({required String imagePath, required String audioPath}) async {
+  /// Add Music to Image String command = '-loop 1 -i $imagePath -i $audioPath -c:v mpeg4 -c:a aac -b:a 192k -shortest $outputPath';
+  Future<String?> addMusicToImage({required String imagePath, required String audioPath}) async {
     try {
       final File imageFile = File(imagePath);
       if (!await imageFile.exists()) {
@@ -168,32 +201,26 @@ class _ImageEditorState extends State<ImageEditor> {
       final String basePath = '${externalDir?.parent.parent.parent.parent.path}/Download/';
       final String outputPath = "$basePath${DateTime.now().millisecondsSinceEpoch}.mp4";
 
-      // String command = "-y -i $imagePath -i $audioPath -map 0:v -map 1:a -c:v copy -shortest -pix_fmt yuv420p $outputPath";
-      // String command = "-r 15 -f mp4 $audioPath -f image2 -i $imagePath -y $outputPath";
-      // String command = '-loop 1 -i $imagePath -i $audioPath -c:v libx264 -tune stillimage -c:a aac -b:a 192k -shortest $outputPath';
-      // String command = '-loop 1 -i $imagePath -i $audioPath -c:v libx264 -c:a aac -b:a 192k -shortest $outputPath';
       String command = '-loop 1 -i $imagePath -i $audioPath -c:v mpeg4 -c:a aac -b:a 192k -shortest $outputPath';
 
       await FFmpegKit.executeAsync(command, (session) async {
         final returnCode = await session.getReturnCode();
-        final logs = await session.getAllLogs();
-        logs.forEach((log) => debugPrint(log.getMessage()));
 
         if (ReturnCode.isSuccess(returnCode)) {
           debugPrint("Output Video Path: $outputPath");
         } else if (ReturnCode.isCancel(returnCode)) {
           debugPrint('FFmpeg command was canceled');
+          throw Exception('FFmpeg command was canceled');
         } else {
-          debugPrint('FFmpeg command failed with return code: $returnCode');
+          throw Exception('FFmpeg command failed with return code: $returnCode');
         }
       });
 
       return outputPath;
     } catch (e) {
-      if (mounted) {
-        showSnackBar(message: 'Error adding music to image: $e',context: context,isError: true,);
-      }
-      return "";
+      debugPrint('Error adding music to image: $e');
+      return null;
     }
   }
+
 }

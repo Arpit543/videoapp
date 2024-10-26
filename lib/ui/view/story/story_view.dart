@@ -176,7 +176,6 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
             },
             onVerticalSwipeComplete: (direction) {
               if (direction == Direction.down) {
-                // Get.offAll(const HomeScreen());
                 Get.back();
               }
             },
