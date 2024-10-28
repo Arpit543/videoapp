@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
@@ -75,7 +74,6 @@ class _FindSongState extends State<FindSong> {
           height: 40,
           child: TextFormField(
             controller: searchController,
-            textAlign: TextAlign.start,
             keyboardType: TextInputType.text,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search, color: Colors.grey),
@@ -97,26 +95,25 @@ class _FindSongState extends State<FindSong> {
           SafeArea(
             child: filteredSongs.isNotEmpty ?
             ListView.builder(
-              shrinkWrap: true,
-              physics: const AlwaysScrollableScrollPhysics(),
               itemCount: filteredSongs.length,
               itemBuilder: (context, index) {
                 final song = filteredSongs[index];
                 return Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   child: InkWell(
                     onTap: () async {
                       setState(() {
                         isLoading = true;
                       });
 
+                      player.pause();
+                      player.dispose();
                       String audioUrl = song.url;
                       await downloadAndTrimAudio(audioUrl, song, context);
 
                       setState(() {
                         isLoading = false;
                       });
-
                     },
                     child: Container(
                       decoration: BoxDecoration(
@@ -126,22 +123,23 @@ class _FindSongState extends State<FindSong> {
                         boxShadow: const [
                           BoxShadow(
                             color: Colors.black12,
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
+                            blurRadius: 6,
+                            offset: Offset(0, 3),
                           ),
                         ],
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(12),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Row(
                               children: [
                                 ClipRRect(
-                                  borderRadius: BorderRadius.circular(5),
-                                  child: Image.network(
-                                    song.artwork,
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: FadeInImage.assetNetwork(
+                                    placeholder: 'assets/ezgif.com-crop.gif',
+                                    image: song.artwork,
                                     fit: BoxFit.cover,
                                     width: 60,
                                     height: 60,
@@ -158,6 +156,7 @@ class _FindSongState extends State<FindSong> {
                                         fontSize: 16,
                                       ),
                                     ),
+                                    const SizedBox(height: 4),
                                     Text(
                                       song.artist,
                                       maxLines: 2,
@@ -175,14 +174,17 @@ class _FindSongState extends State<FindSong> {
                                   onPressed: () async {
                                     if (indexValue == index) {
                                       isSelectedPlayIndex.value = -1;
-                                      Future.delayed(const Duration(milliseconds: 300),() async => await player.pause());
+                                      Future.delayed(const Duration(milliseconds: 300),
+                                              () async => await player.pause());
                                     } else {
                                       isSelectedPlayIndex.value = index;
                                       await player.setAudioSource(AudioSource.uri(Uri.parse(song.url)));
                                       await player.play();
                                     }
                                   },
-                                  icon: indexValue == index ? const Icon(Icons.pause) : const Icon(Icons.play_arrow),
+                                  icon: indexValue == index
+                                      ? const Icon(Icons.pause)
+                                      : const Icon(Icons.play_arrow),
                                 );
                               },
                             ),
@@ -197,10 +199,12 @@ class _FindSongState extends State<FindSong> {
                 : const Center(child: Text('No songs found')),
           ),
           if (isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
             ),
-
         ],
       ),
     );
@@ -216,21 +220,25 @@ class _FindSongState extends State<FindSong> {
       if (response.statusCode == 200) {
         final File audioFile = File(audioPath);
         await audioFile.writeAsBytes(response.bodyBytes).then((_) async {
-          Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (context) => AudioTrimmerViewDemo(audioFileForTrim: audioFile, isImage: widget.isImageOrVideo, song: map, audioFile: (file) {
-                print("come back 123 $file");
-                widget.audioFile(file);
-              })));
-
+          Navigator.pushReplacement(context,MaterialPageRoute(
+              builder: (context) => AudioTrimmerViewDemo(
+                audioFileForTrim: audioFile,
+                isImage: widget.isImageOrVideo,
+                song: map,
+                audioFile: (file) {
+                  widget.audioFile(file);
+                },
+              ),
+            ),
+          );
         }).catchError((error) {
           debugPrint("Failed to navigate using audio");
         });
-
       } else {
         throw Exception('Failed to download audio');
       }
     } catch (e) {
-      Text(e.toString());
+      debugPrint(e.toString());
     }
   }
 }
