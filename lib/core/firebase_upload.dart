@@ -39,27 +39,41 @@ class FirebaseUpload {
   int lenImages = 0;
   int lenVideos = 0;
 
-  Future<void> uploadFileInStorage({required File file,required String type,required BuildContext context,}) async {
+  Future<void> uploadFileInStorage({
+    required File file,
+    required String type,
+    required BuildContext context,
+  }) async {
     try {
       String fileName = file.path.split("/").last;
       Reference storageRef = FirebaseStorage.instance.ref().child("${_auth.currentUser!.uid}/$type/$fileName");
 
       UploadTask uploadTask = storageRef.putFile(file);
 
+      // Listen for upload progress
       uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
         double progress = snapshot.bytesTransferred / snapshot.totalBytes;
         debugPrint("File upload progress ==> ${(progress * 100).toStringAsFixed(2)}%");
       });
 
+      // Await the completion of the upload
       TaskSnapshot taskSnapshot = await uploadTask;
 
+      // Get the download URL
       String downloadUrl = await taskSnapshot.ref.getDownloadURL();
       debugPrint("Download URL: $downloadUrl");
 
-      scaffoldMessengerKey.currentState?.showSnackBar(const SnackBar(content: Text("Uploaded successfully!")));
+      // Show success message
+      if (scaffoldMessengerKey.currentState != null) {
+        scaffoldMessengerKey.currentState!.showSnackBar(const SnackBar(content: Text("Uploaded successfully!")));
+      }
     } catch (e) {
       debugPrint("Upload error: $e");
-      scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text("Upload failed: $e")));
+
+      // Show error message
+      if (scaffoldMessengerKey.currentState != null) {
+        scaffoldMessengerKey.currentState!.showSnackBar(SnackBar(content: Text("Upload failed: $e")));
+      }
     }
   }
 

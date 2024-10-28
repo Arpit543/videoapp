@@ -75,25 +75,33 @@ class _ImageEditorState extends State<ImageEditor> {
                   try {
                     if (audio != null && audio!.path.isNotEmpty) {
                       finalPath = await addMusicToImage(imagePath: editedImageFile.path, audioPath: audio!.path);
-                      debugPrint("video path $finalPath");
+                      debugPrint("video path: $finalPath");
+
                       if (finalPath.isNotEmpty) {
-                        await FirebaseUpload().uploadFileInStorage(file: File(finalPath),type: "Videos",context: context,);
+                        await FirebaseUpload().uploadFileInStorage(file: File(finalPath), type: "Videos", context: context);
                       } else {
                         debugPrint("Final path is empty. Unable to upload video.");
+                        if (mounted) {
+                          showSnackBar(message: 'Final path is empty. Unable to upload video.', context: context, isError: true);
+                        }
                       }
                     } else {
-                      debugPrint("Image path $editedImageFile");
-                      await FirebaseUpload().uploadFileInStorage(file: editedImageFile,type: "Images",context: context,);
+                      debugPrint("Image path: ${editedImageFile.path}");
+                      await FirebaseUpload().uploadFileInStorage(file: editedImageFile, type: "Images", context: context);
                     }
                   } catch (e) {
                     debugPrint("Error during upload process: $e");
-                    if (mounted) showSnackBar(message: 'An error occurred: $e', context: context, isError: true);
+                    if (mounted) {
+                      showSnackBar(message: 'An error occurred: $e', context: context, isError: true);
+                    }
                   } finally {
                     setState(() {
                       isUploading = false;
                     });
 
-                    Get.off(const HomeScreen());
+                    if (mounted) {
+                      Get.off(const HomeScreen());
+                    }
                   }
                 },
               ),
