@@ -36,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     final cameraStatus = await Permission.camera.request();
     final storageStatus = await Permission.storage.request();
 
-    if (cameraStatus.isDenied /*|| storageStatus.isDenied*/) {
+    if (cameraStatus.isDenied || storageStatus.isDenied) {
       _showPermissionSnackBar(cameraStatus, storageStatus);
     } else {
       Future.delayed(const Duration(seconds: 2), () {
@@ -50,9 +50,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     if (cameraStatus.isDenied) {
       message += 'Camera ';
     }
-    /*if (storageStatus.isDenied) {
+    if (storageStatus.isDenied) {
       message += 'Storage ';
-    }*/
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
