@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:videoapp/core/firebase_upload.dart'; // Assuming you have this set up
+import 'package:videoapp/core/firebase_upload.dart';
 
 class AddTextStoryScreen extends StatefulWidget {
   const AddTextStoryScreen({super.key});
@@ -14,7 +14,7 @@ class _AddTextStoryScreenState extends State<AddTextStoryScreen> {
   final FirebaseUpload upload = FirebaseUpload();
   bool _isUploading = false;
 
-    Future<void> _uploadTextStory() async {
+  Future<void> _uploadTextStory() async {
     String textStory = _textController.text.trim();
 
     if (textStory.isEmpty) {
@@ -71,20 +71,20 @@ class _AddTextStoryScreenState extends State<AddTextStoryScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            _isUploading ? const Center(child: CircularProgressIndicator(),)
-                : ElevatedButton(
-                    onPressed: _uploadTextStory,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      "Upload Story",
-                      style: TextStyle(fontSize: 18),
-                    ),
-                  ),
+            _isUploading ? const Center(child: CircularProgressIndicator()) :
+            ElevatedButton(
+              onPressed: _uploadTextStory,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                "Upload Story",
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
           ],
         ),
       ),

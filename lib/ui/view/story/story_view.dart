@@ -84,7 +84,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
   }
 
   bool _isTextFile(String url) {
-    return url.endsWith('.txt');
+    return url.contains('.txt');
   }
 
   Future<String> _fetchTextStory(String url) async {
@@ -99,7 +99,6 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
       throw Exception("Failed to fetch story text: $e");
     }
   }
-
 
   bool _isImage(String url) {
     return url.contains('.jpg') || url.contains('.png') || url.contains('.jpeg');
@@ -135,7 +134,6 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
       debugPrint("Story Deleted: $fileUrl");
     });
   }
-
 
   @override
   void dispose() {
@@ -179,10 +177,10 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
             indicatorOuterPadding: const EdgeInsets.all(10),
             indicatorForegroundColor: const Color(0xff6EA9FF),
             onStoryShow: (storyItem, index) {
-              print("Showing story $index");
+              debugPrint("Showing story $index");
             },
             onComplete: () {
-              print("Completed a cycle");
+              debugPrint("Completed a cycle");
               Get.back();
             },
             onVerticalSwipeComplete: (direction) {
