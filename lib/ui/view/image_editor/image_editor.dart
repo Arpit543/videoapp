@@ -10,16 +10,16 @@ import 'package:pro_image_editor/models/editor_callbacks/pro_image_editor_callba
 import 'package:pro_image_editor/models/editor_configs/pro_image_editor_configs.dart';
 import 'package:pro_image_editor/modules/main_editor/main_editor.dart';
 import 'package:videoapp/core/firebase_upload.dart';
-import 'package:videoapp/ui/view/home_screen.dart';
 import 'package:videoapp/ui/view/my_work/tab_vew.dart';
+import 'package:videoapp/ui/view/video_edit/export_result.dart';
 import 'package:videoapp/ui/view/video_edit/find_song.dart';
-import 'package:videoapp/ui/widget/common_snackbar.dart';
 
 class ImageEditor extends StatefulWidget {
   final File imageFile;
-  final Function(String file) audioFile;
+  final Function(String file) imageFileFunction;
+  final bool isStory;
 
-  const ImageEditor({super.key, required this.imageFile, required this.audioFile});
+  const ImageEditor({super.key, required this.imageFile, required this.imageFileFunction, required this.isStory});
 
   @override
   State<ImageEditor> createState() => _ImageEditorState();
@@ -32,16 +32,12 @@ class _ImageEditorState extends State<ImageEditor> {
   ValueNotifier<bool> isMute = ValueNotifier(false);
   File? audio;
 
+  // Convert Uint8List image bytes to a File
   Future<File> _convertBytesToFile(Uint8List imageBytes) async {
     final tempDir = await getTemporaryDirectory();
     final file = File('${tempDir.path}/${widget.imageFile.path.split("/").last}');
     await file.writeAsBytes(imageBytes);
     return file;
-  }
-
-  @override
-  void initState() {
-    super.initState();
   }
 
   @override
@@ -57,7 +53,6 @@ class _ImageEditorState extends State<ImageEditor> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Image Editor
           Container(
             color: Colors.white,
             child: ProImageEditor.file(
@@ -66,73 +61,25 @@ class _ImageEditorState extends State<ImageEditor> {
               callbacks: ProImageEditorCallbacks(
                 tuneEditorCallbacks: const TuneEditorCallbacks(),
                 onImageEditingComplete: (Uint8List bytes) async {
-                  setState(() {
-                    isUploading = true; // Set uploading state to true
-                  });
+                  setState(() { isUploading = true; });
 
-                  // Convert bytes to a File
                   File editedImageFile = await _convertBytesToFile(bytes);
-                  String? finalPath;
 
-                  try {
-                    if (audio != null && audio!.path.isNotEmpty) {
-                      // Add music to the edited image if audio is available
-                      finalPath = await addMusicToImage(
-                        imagePath: editedImageFile.path,
-                        audioPath: audio!.path,
-                      );
-
-                      debugPrint("Final video path: $finalPath");
-
-                      if (finalPath != null && finalPath.isNotEmpty) {
-                        // Upload the final video to Firebase
-                        await FirebaseUpload().uploadFileInStorage(
-                          file: File(finalPath),
-                          type: "Videos",
-                          context: context,
-                        );
-                        Get.off(const MyWorkTab(index: 1));
-                      } else {
-                        debugPrint("Final path is empty. Unable to upload video.");
-                        if (mounted) {
-                          showSnackBar(
-                            message: 'Final path is empty. Unable to upload video.',
-                            context: context,
-                            isError: true,
-                          );
-                        }
-                      }
-                    } else {
-                      // Upload the edited image to Firebase
-                      await FirebaseUpload().uploadFileInStorage(
-                        file: editedImageFile,
-                        type: "Images",
-                        context: context,
-                      );
-
-                      Get.off(const MyWorkTab(index: 0));
-                    }
-                  } catch (e) {
-                    // Handle any errors during the upload process
-                    debugPrint("Error during upload process: $e");
-                    if (mounted) {
-                      showSnackBar(
-                        message: 'An error occurred: $e',
-                        context: context,
-                        isError: true,
-                      );
-                    }
-                  } finally {
-                    // Always reset the uploading state and navigate back
+                  if(audio != null) {
                     setState(() {
-                      isUploading = false;
+                      isUploading = true;
                     });
+                    await addMusicToImage(imagePath: editedImageFile.path, audioPath: audio!.path);
+                    debugPrint("====== Audio Added ======");
+                  } else {
+                    widget.isStory ? widget.imageFileFunction(editedImageFile.path) : await FirebaseUpload().uploadImageVideoInStorage(file: editedImageFile,type: "Images",context: context,);
+                    widget.isStory ? Navigator.pop(context) : Get.off(const MyWorkTab(index: 0));
+                    debugPrint("====== Image Uploaded ======");
                   }
                 },
               ),
             ),
           ),
-
           Positioned(
             top: 35,
             right: Get.width / 2 - 45,
@@ -158,8 +105,6 @@ class _ImageEditorState extends State<ImageEditor> {
               },
             ),
           ),
-
-          // Volume Icon
           Positioned(
             top: 35,
             right: Get.width / 2,
@@ -179,14 +124,19 @@ class _ImageEditorState extends State<ImageEditor> {
               },
             ),
           ),
+          if(isUploading == true)
+            const Center(child: CircularProgressIndicator(color: Colors.blueGrey,),),
         ],
       ),
     );
   }
 
-  /// Add Music to Image String command = '-loop 1 -i $imagePath -i $audioPath -c:v mpeg4 -c:a aac -b:a 192k -shortest $outputPath';
+  /// Add music to image and create video using FFmpeg
   Future<String?> addMusicToImage({required String imagePath, required String audioPath}) async {
     try {
+      setState(() {
+        isUploading = true;
+      });
       final File imageFile = File(imagePath);
       if (!await imageFile.exists()) {
         throw Exception('Image file does not exist at path: $imagePath');
@@ -201,13 +151,21 @@ class _ImageEditorState extends State<ImageEditor> {
       final String basePath = '${externalDir?.parent.parent.parent.parent.path}/Download/';
       final String outputPath = "$basePath${DateTime.now().millisecondsSinceEpoch}.mp4";
 
-      String command = '-loop 1 -i $imagePath -i $audioPath -c:v mpeg4 -c:a aac -b:a 192k -shortest $outputPath';
+      final audioDuration = _player.duration!.inSeconds;
+      String command = '-loop 1 -i $imagePath -i $audioPath -c:v mpeg4 -c:a aac -b:a 192k -shortest -t $audioDuration $outputPath';
 
       await FFmpegKit.executeAsync(command, (session) async {
         final returnCode = await session.getReturnCode();
 
         if (ReturnCode.isSuccess(returnCode)) {
           debugPrint("Output Video Path: $outputPath");
+
+          widget.isStory ? widget.imageFileFunction(outputPath) : await Get.off(VideoResultPopup(video: File(outputPath),isShowWidget: true));
+          if (widget.isStory && mounted) Navigator.pop(context);
+
+          setState(() {
+            isUploading = false;
+          });
         } else if (ReturnCode.isCancel(returnCode)) {
           debugPrint('FFmpeg command was canceled');
           throw Exception('FFmpeg command was canceled');
@@ -215,7 +173,6 @@ class _ImageEditorState extends State<ImageEditor> {
           throw Exception('FFmpeg command failed with return code: $returnCode');
         }
       });
-
       return outputPath;
     } catch (e) {
       debugPrint('Error adding music to image: $e');

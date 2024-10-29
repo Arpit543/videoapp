@@ -19,6 +19,8 @@ Future<void> _getImageDimension(File file, {required Function(Size) onResult}) a
 String _fileMBSize(File file) => ' ${(file.lengthSync() / (1024 * 1024)).toStringAsFixed(1)} MB';
 
 /// Class to show Video after edit [VideoResultPopup]
+/// Class to show Cover Image from image and video [CoverResultPopup]
+/// Show File Description When Video or Image file Exported [FileDescription]
 
 class VideoResultPopup extends StatefulWidget {
   final File video;
@@ -98,9 +100,11 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    AspectRatio(
-                      aspectRatio: _fileDimension.aspectRatio != 0 ? _fileDimension.aspectRatio : _controller!.value.aspectRatio,
-                      child: _isGif ? Image.file(widget.video, fit: BoxFit.cover) : VideoPlayer(_controller!),
+                    Center(
+                      child: AspectRatio(
+                        aspectRatio: _fileDimension.aspectRatio != 0 ? _fileDimension.aspectRatio : _controller!.value.aspectRatio,
+                        child: _isGif ? Image.file(widget.video, fit: BoxFit.cover) : VideoPlayer(_controller!),
+                      ),
                     ),
                     if (!_isGif) // Only show for video
                       GestureDetector(
@@ -182,25 +186,15 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                         });
 
                         try {
-                          await FirebaseUpload().uploadFileInStorage(
-                            file: widget.video,
-                            type: "Videos",
-                            context: context,
-                          );
-                          Get.offAll(const MyWorkTab(index: 1));
+                          await FirebaseUpload().uploadImageVideoInStorage(file: widget.video,type: "Videos",context: context,);
+                          Get.off(const MyWorkTab(index: 1));
                         } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Upload failed: $e")),
-                          );
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Upload failed: $e")),);
                         } finally {
-                          setState(() {
-                            _isLoading = false;
-                          });
+                          setState(() { _isLoading = false; });
                         }
                        },
-                    child: _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : Text(
+                    child: _isLoading ? const Center(child: CircularProgressIndicator()) : Text(
                       "Save",
                       style: TextStyle(
                         color: const CropGridStyle().selectedBoundariesColor,
@@ -217,7 +211,6 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
   }
 }
 
-/// Class to show Cover Image from image and video [CoverResultPopup]
 class CoverResultPopup extends StatefulWidget {
   const CoverResultPopup({super.key, required this.cover});
 
@@ -294,7 +287,6 @@ class _CoverResultPopupState extends State<CoverResultPopup> {
   }
 }
 
-/// Show File Description When Video or Image file Exported
 class FileDescription extends StatelessWidget {
   const FileDescription({super.key, required this.description});
 

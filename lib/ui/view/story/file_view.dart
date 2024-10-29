@@ -170,7 +170,7 @@ class _FileViewState extends State<FileView> {
                         }
 
                         for (int i = 0; i < data.length; i++) {
-                          await FirebaseUpload().uploadListInStorage(
+                          await FirebaseUpload().uploadStoryInStorage(
                             images: [data[i]],
                             type: "Story",
                             context: context,
@@ -211,7 +211,13 @@ class _FileViewState extends State<FileView> {
 
   void _handleEdit(StoryTypeModel storyItems, int index) {
     if (storyItems.story.contains('.jpg') || storyItems.story.contains('.png') || storyItems.story.contains('.jpeg')) {
-      Get.to(ImageEditor(imageFile: File(storyItems.story),audioFile: (file) {},));
+      Get.to(ImageEditor(
+        imageFile: File(storyItems.story),
+        imageFileFunction: (file) {
+          pickedMediaStory[index] = StoryTypeModel(story: file, type: StoryType.image);
+          },
+        isStory: true,
+      ));
     } else if (storyItems.story.contains('.mp4') || storyItems.story.contains('.mov') || storyItems.story.contains('.avi') ||
         storyItems.story.contains('.mp3') || storyItems.story.contains('.mkv')) {
       Get.to(VideoEditor(

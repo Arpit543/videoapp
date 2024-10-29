@@ -104,6 +104,7 @@ class _FindSongState extends State<FindSong> {
                     onTap: () async {
                       setState(() {
                         isLoading = true;
+                        isSelectedPlayIndex.value = index;
                       });
 
                       player.pause();
@@ -138,7 +139,7 @@ class _FindSongState extends State<FindSong> {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: FadeInImage.assetNetwork(
-                                    placeholder: 'assets/ezgif.com-crop.gif',
+                                    placeholder: 'assets/anim/ezgif.com-crop.gif',
                                     image: song.artwork,
                                     fit: BoxFit.cover,
                                     width: 60,
@@ -170,21 +171,19 @@ class _FindSongState extends State<FindSong> {
                             ValueListenableBuilder(
                               valueListenable: isSelectedPlayIndex,
                               builder: (context, indexValue, _) {
-                                return IconButton(
+                                return (isLoading && indexValue == index) ? const Center(child: CircularProgressIndicator(color: Color(0xff6EA9FF))) :
+                                IconButton(
                                   onPressed: () async {
                                     if (indexValue == index) {
                                       isSelectedPlayIndex.value = -1;
-                                      Future.delayed(const Duration(milliseconds: 300),
-                                              () async => await player.pause());
+                                      Future.delayed(const Duration(milliseconds: 300),() async => await player.pause());
                                     } else {
                                       isSelectedPlayIndex.value = index;
                                       await player.setAudioSource(AudioSource.uri(Uri.parse(song.url)));
                                       await player.play();
                                     }
                                   },
-                                  icon: indexValue == index
-                                      ? const Icon(Icons.pause)
-                                      : const Icon(Icons.play_arrow),
+                                  icon: indexValue == index ? const Icon(Icons.pause) : const Icon(Icons.play_arrow),
                                 );
                               },
                             ),
@@ -198,13 +197,10 @@ class _FindSongState extends State<FindSong> {
             )
                 : const Center(child: Text('No songs found')),
           ),
-          if (isLoading)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
+          // if (isLoading)
+          //   const Center(
+          //     child: CircularProgressIndicator(),
+          //   ),
         ],
       ),
     );

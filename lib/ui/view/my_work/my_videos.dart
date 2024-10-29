@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:videoapp/ui/widget/common_snackbar.dart';
 import '../../../core/firebase_upload.dart';
 import '../video_edit/export_result.dart';
 
@@ -74,15 +75,11 @@ class _MyVideosWorkState extends State<MyVideosWork> {
       final storageRef = FirebaseStorage.instance.ref("${auth.currentUser!.uid}/Videos/$fileName");
       await storageRef.delete();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Video deleted successfully!')),
-      );
+      showSnackBar(context: context,message: "Deleted Success", isError: false);
       await upload.getVideoData();
       setState(() {});
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting video: $e')),
-      );
+      showSnackBar(context: context,message: "Error deleting video: $e", isError: false);
     }
   }
 

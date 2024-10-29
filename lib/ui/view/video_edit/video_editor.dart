@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -12,6 +13,8 @@ import 'package:videoapp/ui/view/video_edit/export_result.dart';
 import 'package:videoapp/ui/view/video_edit/export_services.dart';
 import 'package:videoapp/ui/view/video_edit/find_song.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
+
+import '../../widget/common_theme.dart';
 
 class VideoEditor extends StatefulWidget {
   final File videoFile;
@@ -25,6 +28,16 @@ class VideoEditor extends StatefulWidget {
 }
 
 class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
+
+  ///   Export Cover [_exportCover]
+  ///   Export Edited Video [_exportAndMergeVideo]
+  ///   Rotate, Crop, Music, Save, Volume [_topNavBar]
+  ///   Formatter for length [formatter]
+  ///   Slider for trim Video [_trimSlider]
+  ///  Create Covers From Video [_coverSelection]
+  ///   Merge Audio and Video [mergeAudioAndVideo]
+  ///   Initialize VideoEditorController [_controller]
+
   final _exportingProgress = ValueNotifier<double>(0.0);
   final _isExporting = ValueNotifier<bool>(false);
   final double height = 60;
@@ -32,6 +45,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
   ValueNotifier<bool> isMuted = ValueNotifier(true);
   File? audioFile;
   bool isLoading = false;
+  late String exportFilePath = "";
 
   late final VideoEditorController _controller = VideoEditorController.file(
     widget.videoFile,
@@ -48,23 +62,14 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
 
   @override
   void initState() {
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Color(0xff6EA9FF)
+      )
+    );
+    ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
     _initializeController();
     super.initState();
-  }
-
-  Future<void> _initializeController() async {
-    try {
-      await _controller.initialize(aspectRatio: 16 / 9);
-      setState(() {});
-      _controller.video.setVolume(1.0);
-      isMuted.value = true;
-    } catch (error) {
-      if (error is VideoMinDurationError) {
-        Get.back();
-      } else {
-        debugPrint("Error initializing video: $error");
-      }
-    }
   }
 
   @override
@@ -210,9 +215,216 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     ExportService.dispose();
   }
 
-  late String exportFilePath = "";
+  Future<void> _initializeController() async {
+    try {
+      await _controller.initialize(aspectRatio: 16 / 9);
+      setState(() {});
+      _controller.video.setVolume(1.0);
+      isMuted.value = true;
+    } catch (error) {
+      if (error is VideoMinDurationError) {
+        Get.back();
+      } else {
+        debugPrint("Error initializing video: $error");
+      }
+    }
+  }
 
-  ///   Export Cover [_exportCover]
+  Widget _topNavBar() {
+    return SafeArea(
+      child: SizedBox(
+        height: 60,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Expanded(
+              child: ValueListenableBuilder(
+                valueListenable: isMuted,
+                builder: (context, value, child) {
+                  return Tooltip(
+                    message: 'Sound',
+                    child: IconButton(
+                      onPressed: () async {
+                        isMuted.value = !isMuted.value;
+                        await _controller.video.setVolume(value ? 0.0 : 1.0);
+                      },
+                      icon: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: Icon(
+                          value ? Icons.volume_up : Icons.volume_off,
+                          key: ValueKey<bool>(value),
+                          color: Colors.black,
+                          size: 30, // Uniform icon size
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const VerticalDivider(endIndent: 16, indent: 16),
+            // Adjusted spacing
+            Expanded(
+              child: Tooltip(
+                message: 'Rotate UnClockwise',
+                child: IconButton(
+                  onPressed: () =>
+                      _controller.rotate90Degrees(RotateDirection.left),
+                  icon: const Icon(
+                    Icons.rotate_left,
+                    size: 30,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Tooltip(
+                message: 'Open Crop Screen',
+                child: IconButton(
+                  onPressed: () => Get.to(CropPage(controller: _controller)),
+                  icon: const Icon(
+                    Icons.crop,
+                    size: 30,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Tooltip(
+                message: 'Music',
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) =>
+                        FindSong(audioFile: (file) async {
+                          audioFile = File(file);
+                          await _player.setAudioSource(AudioSource.file(audioFile!.path));
+                          await _player.setLoopMode(LoopMode.one);
+                          _player.setVolume(1.0);
+                          _player.play();
+                        }, isImageOrVideo: false,)));
+                  },
+                  icon: const Icon(
+                    Icons.music_note,
+                    size: 30,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Tooltip(
+                message: 'Rotate Clockwise',
+                child: IconButton(
+                  onPressed: () =>
+                      _controller.rotate90Degrees(RotateDirection.right),
+                  icon: const Icon(
+                    Icons.rotate_right,
+                    size: 30,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ),
+            const VerticalDivider(endIndent: 16, indent: 16),
+            Expanded(
+              child: Tooltip(
+                message: 'Open Export Menu',
+                child: PopupMenuButton(
+                  icon: const Icon(
+                    Icons.save,
+                    size: 30,
+                    color: Colors.black,
+                  ),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      onTap: () => _exportCover(),
+                      child: const Text('Export Cover'),
+                    ),
+                    PopupMenuItem(
+                      onTap: () {
+                        setState(() {
+                          isLoading = true;
+                        });
+                        _exportAndMergeVideo();
+                      },
+                      child: const Text('Export Video'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String formatter(Duration duration) => [
+    duration.inMinutes.remainder(60).toString().padLeft(2, '0'),
+    duration.inSeconds.remainder(60).toString().padLeft(2, '0')
+  ].join(":");
+
+  List<Widget> _trimSlider() {
+    return [
+      AnimatedBuilder(
+        animation: Listenable.merge([
+          _controller,
+          _controller.video,
+        ]),
+        builder: (_, __) {
+          final int duration = _controller.videoDuration.inSeconds;
+          final double pos = _controller.trimPosition * duration;
+
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: height / 4),
+            child: Row(
+              children: [
+                Text(
+                  formatter(Duration(seconds: pos.toInt())),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const Expanded(child: SizedBox()),
+                AnimatedOpacity(
+                  opacity: _controller.isTrimming ? 1 : 0,
+                  duration: kThemeAnimationDuration,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        formatter(_controller.startTrim),
+                        style: const TextStyle(color: Colors.black),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        formatter(_controller.endTrim),
+                        style: const TextStyle(color: Colors.black),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+      SizedBox(
+        width: MediaQuery.of(context).size.width,
+        child: TrimSlider(
+          controller: _controller,
+          scrollController: ScrollController(keepScrollOffset: true),
+          height: height,
+          horizontalMargin: height / 4,
+          child: TrimTimeline(
+            controller: _controller,
+            padding: const EdgeInsets.only(top: 10),
+          ),
+        ),
+      ),
+    ];
+  }
+
   void _exportCover() async {
     final config = CoverFFmpegVideoEditorConfig(_controller);
     final execute = await config.getExecuteConfig();
@@ -231,7 +443,6 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     );
   }
 
-  ///   Export Edited Video [_exportAndMergeVideo]
   Future<void> _exportAndMergeVideo() async {
     isLoading = true;
     _isExporting.value = false;
@@ -315,234 +526,6 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     );
   }
 
-  ///   Rotate, Crop, Save, Volume Up Down
-  Widget _topNavBar() {
-    return SafeArea(
-      child: SizedBox(
-        height: 60,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Expanded(
-              child: ValueListenableBuilder(
-                valueListenable: isMuted,
-                builder: (context, value, child) {
-                  return Tooltip(
-                    message: 'Sound',
-                    child: IconButton(
-                      onPressed: () async {
-                        isMuted.value = !isMuted.value;
-                        await _controller.video.setVolume(value ? 0.0 : 1.0);
-                      },
-                      icon: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        child: Icon(
-                          value ? Icons.volume_up : Icons.volume_off,
-                          key: ValueKey<bool>(value),
-                          color: Colors.black,
-                          size: 30, // Uniform icon size
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const VerticalDivider(endIndent: 16, indent: 16),
-            // Adjusted spacing
-            Expanded(
-              child: Tooltip(
-                message: 'Rotate UnClockwise',
-                child: IconButton(
-                  onPressed: () =>
-                      _controller.rotate90Degrees(RotateDirection.left),
-                  icon: const Icon(
-                    Icons.rotate_left,
-                    size: 30,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Tooltip(
-                message: 'Open Crop Screen',
-                child: IconButton(
-                  onPressed: () => Get.to(CropPage(controller: _controller)),
-                  icon: const Icon(
-                    Icons.crop,
-                    size: 30,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Tooltip(
-                message: 'Music',
-                child: IconButton(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) =>
-                                FindSong(audioFile: (file) async {
-                                  audioFile = File(file);
-                                  await _player.setAudioSource(AudioSource.file(audioFile!.path));
-                                  await _player.setLoopMode(LoopMode.one);
-                                  _player.setVolume(1.0);
-                                  _player.play();
-                                }, isImageOrVideo: false,)));
-                  },
-                  icon: const Icon(
-                    Icons.music_note,
-                    size: 30,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Tooltip(
-                message: 'Rotate Clockwise',
-                child: IconButton(
-                  onPressed: () =>
-                      _controller.rotate90Degrees(RotateDirection.right),
-                  icon: const Icon(
-                    Icons.rotate_right,
-                    size: 30,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            ),
-            const VerticalDivider(endIndent: 16, indent: 16),
-            Expanded(
-              child: Tooltip(
-                message: 'Open Export Menu',
-                child: PopupMenuButton(
-                  icon: const Icon(
-                    Icons.save,
-                    size: 30,
-                    color: Colors.black,
-                  ),
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      onTap: () => _exportCover(),
-                      child: const Text('Export Cover'),
-                    ),
-                    PopupMenuItem(
-                      onTap: () {
-                        setState(() {
-                          isLoading = true;
-                        });
-                        _exportAndMergeVideo();
-                      },
-                      child: const Text('Export Video'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  ///   Formatter for length
-  String formatter(Duration duration) => [
-        duration.inMinutes.remainder(60).toString().padLeft(2, '0'),
-        duration.inSeconds.remainder(60).toString().padLeft(2, '0')
-      ].join(":");
-
-  ///   Slider for trim Video [_trimSlider]
-  List<Widget> _trimSlider() {
-    return [
-      AnimatedBuilder(
-        animation: Listenable.merge([
-          _controller,
-          _controller.video,
-        ]),
-        builder: (_, __) {
-          final int duration = _controller.videoDuration.inSeconds;
-          final double pos = _controller.trimPosition * duration;
-
-          return Padding(
-            padding: EdgeInsets.symmetric(horizontal: height / 4),
-            child: Row(
-              children: [
-                Text(
-                  formatter(Duration(seconds: pos.toInt())),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const Expanded(child: SizedBox()),
-                AnimatedOpacity(
-                  opacity: _controller.isTrimming ? 1 : 0,
-                  duration: kThemeAnimationDuration,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        formatter(_controller.startTrim),
-                        style: const TextStyle(color: Colors.black),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        formatter(_controller.endTrim),
-                        style: const TextStyle(color: Colors.black),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-      SizedBox(
-        width: MediaQuery.of(context).size.width,
-        child: TrimSlider(
-          controller: _controller,
-          scrollController: ScrollController(keepScrollOffset: true),
-          height: height,
-          horizontalMargin: height / 4,
-          child: TrimTimeline(
-            controller: _controller,
-            padding: const EdgeInsets.only(top: 10),
-          ),
-        ),
-      ),
-    ];
-  }
-
-  ///  Create Covers From Video [_coverSelection]
-  Widget _coverSelection() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Center(
-        child: Container(
-          margin: const EdgeInsets.all(15),
-          child: CoverSelection(
-            controller: _controller,
-            size: height + 10,
-            quantity: 6,
-            selectedCoverBuilder: (cover, size) {
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  cover,
-                  Icon(
-                    Icons.check_circle,
-                    color: const CoverSelectionStyle().selectedBorderColor,
-                  )
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  ///   Merge Audio and Video [mergeAudioAndVideo]
   Future<String> mergeAudioAndVideo(String videoPath, String audioPath) async {
     try {
       final File audioFile = File(audioPath);
@@ -590,5 +573,33 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
       }
       return e.toString();
     }
+  }
+
+  Widget _coverSelection() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.all(15),
+          child: CoverSelection(
+            controller: _controller,
+            size: height + 10,
+            quantity: 6,
+            selectedCoverBuilder: (cover, size) {
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  cover,
+                  Icon(
+                    Icons.check_circle,
+                    color: const CoverSelectionStyle().selectedBorderColor,
+                  )
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
   }
 }

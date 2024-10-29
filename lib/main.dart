@@ -4,17 +4,16 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:videoapp/core/constants.dart';
 import 'package:videoapp/ui/view/splash_screen.dart';
+import 'package:videoapp/ui/widget/common_theme.dart';
 
 import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await Constants.init();
+  ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
   runApp(const MyApp());
 }
 
@@ -32,6 +31,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        appBarTheme: const AppBarTheme(
+          systemOverlayStyle: SystemUiOverlayStyle(statusBarColor: Color(0xff6EA9FF))
+        ),
         useMaterial3: true,
       ),
       home: const SplashScreen(),

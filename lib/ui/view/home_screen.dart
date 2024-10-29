@@ -8,6 +8,7 @@ import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/image_editor/image_editor.dart';
 import 'package:videoapp/ui/view/my_work/tab_vew.dart';
 import 'package:videoapp/ui/view/splash_screen.dart';
+import 'package:videoapp/ui/view/story/add_text_story.dart';
 import 'package:videoapp/ui/view/story/file_view.dart';
 import 'package:videoapp/ui/view/story/story_view.dart';
 import 'package:videoapp/ui/view/video_edit/video_editor.dart';
@@ -51,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           galleryFile = File(pickedFile.path);
         });
-        Get.to(VideoEditor(videoFile: File(pickedFile.path), videoFileFunction: (String file) {  },isStory: false,));
+        Get.to(VideoEditor(videoFile: File(pickedFile.path), videoFileFunction: (String file) { }, isStory: false,));
       }
     } catch (e) {
       if(mounted) showSnackBar(context: context, message: "Error picking video: $e");
@@ -64,10 +65,40 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         cameraFile = File(pickedFile.path);
       });
-      Get.to(ImageEditor(imageFile: cameraFile!, audioFile: (file) {},));
+      Get.to(ImageEditor(imageFile: cameraFile!, imageFileFunction: (file) { }, isStory: false,));
     }
   }
 
+  Future<void> addMedia() async {
+    try {
+
+      final pickedFiles = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowMultiple: true,
+        withData: true,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'mov', 'mp4', 'mkv','avi'],
+      );
+
+      if (pickedFiles != null) {
+        for (final file in pickedFiles.files) {
+          final path = file.path;
+          if (path != null) {
+            if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png')) {
+              storyItems.add(StoryTypeModel(story: path, type: StoryType.image));
+            } else if (path.endsWith('.mov') || path.endsWith('.mp4') || path.endsWith('.mkv') || path.endsWith('.avi')) {
+              storyItems.add(StoryTypeModel(story: path, type: StoryType.video));
+            }
+          }
+        }
+      }
+      setState(() {});
+      if (storyItems.isNotEmpty) {
+        Get.to(FileView(pickedMedia: storyItems, videoFile: (String file) {  },));
+      }
+    } catch (e) {
+      if(mounted) { showSnackBar(context: context, message: "Error picking media: $e", isError: true); }
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,43 +107,34 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: const Color(0xff6EA9FF),
         elevation: 0,
         centerTitle: true,
-        leading: InkWell(
-          onTap: () async {
-            try {
-
-              final pickedFiles = await FilePicker.platform.pickFiles(
-                type: FileType.custom,
-                allowMultiple: true,
-                withData: true,
-                allowedExtensions: ['jpg', 'jpeg', 'png', 'mov', 'mp4', 'mkv','avi'],
-              );
-
-              if (pickedFiles != null) {
-                for (final file in pickedFiles.files) {
-                  final path = file.path;
-                  if (path != null) {
-                    if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png')) {
-                      storyItems.add(StoryTypeModel(story: path, type: StoryType.image));
-                    } else if (path.endsWith('.mov') || path.endsWith('.mp4') || path.endsWith('.mkv') || path.endsWith('.avi')) {
-                      storyItems.add(StoryTypeModel(story: path, type: StoryType.video));
-                    }
-                  }
-                }
-              }
-              setState(() {});
-              if (storyItems.isNotEmpty) {
-                Get.to(FileView(pickedMedia: storyItems, videoFile: (String file) {  },));
-              }
-            } catch (e) {
-              if(mounted) {
-                showSnackBar(context: context, message: "Error picking media: $e", isError: true);
-              }
-            }
-          },
-          child: const Padding(
-            padding: EdgeInsets.all(10.0),
-            child: Icon(Icons.add_box_outlined, color: Colors.white),
+        leading: Row(
+          children: [
+            Tooltip(
+            message: 'Open Export Menu',
+            child: PopupMenuButton(
+              color: Colors.white,
+              elevation: 0.5,
+              padding: const EdgeInsets.all(5),
+              shadowColor: Colors.grey,
+              icon: const Icon(
+                Icons.add_box_outlined,
+                color: Colors.white,
+              ),
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  onTap: () {
+                    Get.to(const AddTextStoryScreen());
+                  },
+                  child: const Text('Add Text'),
+                ),
+                PopupMenuItem(
+                  onTap: () => addMedia(),
+                  child: const Text('Add Media'),
+                ),
+              ],
+            ),
           ),
+          ],
         ),
         title: Text(
           'Hey $name',

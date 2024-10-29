@@ -1,9 +1,11 @@
+import 'dart:async'; // Import to use Timer
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:story_view/story_view.dart';
 import 'package:video_player/video_player.dart';
 import 'package:videoapp/core/firebase_upload.dart';
+import 'package:http/http.dart' as http;
 
 class StoryViewScreen extends StatefulWidget {
   const StoryViewScreen({super.key});
@@ -17,116 +19,123 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
   final FirebaseUpload upload = FirebaseUpload();
   VideoPlayerController? _videoController;
   late Future<List<String>> _dataFutureImages;
-  late List<StoryItem> storyData;
+  List<StoryItem> storyData = [];
 
   @override
   void initState() {
     super.initState();
     _dataFutureImages = upload.getStoryData();
-    storyData = [];
-    WidgetsBinding.instance.addPostFrameCallback((_){
-      _dataFutureImages.then((storyItems) {
-        setState(() {
-          getInitializeList(storyItems);
-        });
-      }).catchError((error) {
-        if (kDebugMode) {
-          print("Error fetching story data: $error");
-        }
-      });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadStories();
     });
   }
 
-  /*void getInitializeList(List<String> storyItems) {
-    for (var item in storyItems) {
-      if (item.startsWith('http') && (item.contains('.jpg') || item.contains('.png') || item.contains('.jpeg'))) {
-        storyData.add(
-          StoryItem.pageImage(
-            url: item,
-            caption: const Text(
-              "A beautiful image",
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-            controller: storyController,
-            imageFit: BoxFit.cover,
-          ),
-        );
-      } else if (item.startsWith('http') && item.contains('.mp4')) {
-        _videoController = VideoPlayerController.networkUrl(Uri.parse(item));
-        _videoController = VideoPlayerController.networkUrl(Uri.parse(item))
-          ..initialize().then((_) {
-            setState(() {});
-            setState(() {});
-          });
-
-        VideoPlayer(_videoController!);
-
-        storyData.add(
-          StoryItem.pageVideo(
-            item,
-            controller: storyController,
-          ),
-        );
-      } else {
-        storyData.add(
-          StoryItem.text(
-            title: item,
-            backgroundColor: Colors.blueAccent,
-            textStyle: const TextStyle(
-              fontSize: 24,
-              color: Colors.white,
-            ),
-          ),
-        );
-      }
-    }
-  }*/
-
-  void getInitializeList(List<String> storyItems) {
-    for (var item in storyItems) {
-      if (item.startsWith('http') && (item.contains('.jpg') || item.contains('.png') || item.contains('.jpeg'))) {
-        storyData.add(
-          StoryItem.pageImage(
-            url: item,
-            caption: const Text(
-              "A beautiful image",
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-            controller: storyController,
-            imageFit: BoxFit.cover,
-          ),
-        );
-      } else if (item.startsWith('http') && item.contains('.mp4')) {
-        _videoController = VideoPlayerController.networkUrl(Uri.parse(item))
-          ..initialize().then((_) {
-            setState(() {});
-            _videoController!.play();
-          }).catchError((error) {
-            if (kDebugMode) {
-              print("Error initializing video: $error");
-            }
-          });
-
-        storyData.add(
-          StoryItem.pageVideo(
-            item,
-            controller: storyController,
-          ),
-        );
-      } else {
-        storyData.add(
-          StoryItem.text(
-            title: item,
-            backgroundColor: Colors.blueAccent,
-            textStyle: const TextStyle(
-              fontSize: 24,
-              color: Colors.white,
-            ),
-          ),
-        );
+  Future<void> _loadStories() async {
+    try {
+      List<String> storyItems = await _dataFutureImages;
+      getInitializeList(storyItems);
+    } catch (error) {
+      if (kDebugMode) {
+        print("Error fetching story data: $error");
       }
     }
   }
+
+  void getInitializeList(List<String> storyItems) async {
+    storyData.clear();
+    for (var item in storyItems) {
+      if (item.startsWith('http')) {
+        if (_isImage(item)) {
+          storyData.add(
+            StoryItem.pageImage(
+              url: item,
+              caption: const Text(
+                "A beautiful image",
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              controller: storyController,
+              imageFit: BoxFit.cover,
+            ),
+          );
+          scheduleDeletion(item);
+        } else if (_isVideo(item)) {
+          _addVideoStory(item);
+        } else if (_isTextFile(item)) {
+          String storyText = await _fetchTextStory(item);
+          storyData.add(
+            StoryItem.text(
+              title: storyText,
+              backgroundColor: Colors.blueAccent,
+              textStyle: const TextStyle(fontSize: 24, color: Colors.white),
+            ),
+          );
+        }
+      } else {
+        storyData.add(
+          StoryItem.text(
+            title: item,
+            backgroundColor: Colors.blueAccent,
+            textStyle: const TextStyle(fontSize: 24, color: Colors.white),
+          ),
+        );
+      }
+    }
+    setState(() {});
+  }
+
+  bool _isTextFile(String url) {
+    return url.endsWith('.txt');
+  }
+
+  Future<String> _fetchTextStory(String url) async {
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+        throw Exception("Failed to load text story");
+      }
+    } catch (e) {
+      throw Exception("Failed to fetch story text: $e");
+    }
+  }
+
+
+  bool _isImage(String url) {
+    return url.contains('.jpg') || url.contains('.png') || url.contains('.jpeg');
+  }
+
+  bool _isVideo(String url) {
+    return url.contains('.mp4');
+  }
+
+  void _addVideoStory(String videoUrl) {
+    _videoController = VideoPlayerController.networkUrl(Uri.parse(videoUrl))
+      ..initialize().then((_) {
+        setState(() {
+          storyData.add(
+            StoryItem.pageVideo(
+              videoUrl,
+              controller: storyController,
+            ),
+          );
+        });
+        _videoController!.play();
+      }).catchError((error) {
+        if (kDebugMode) {
+          print("Error initializing video: $error");
+        }
+      });
+    scheduleDeletion(videoUrl);
+  }
+
+  void scheduleDeletion(String fileUrl) {
+    Timer(const Duration(hours: 24), () async {
+      await upload.deleteStory(fileUrl);
+      debugPrint("Story Deleted: $fileUrl");
+    });
+  }
+
 
   @override
   void dispose() {
@@ -164,7 +173,9 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
             storyItems: storyData,
             progressPosition: ProgressPosition.top,
             indicatorColor: Colors.white,
-            indicatorHeight: IndicatorHeight.large,
+            inline: true,
+            repeat: false,
+            indicatorHeight: IndicatorHeight.small,
             indicatorOuterPadding: const EdgeInsets.all(10),
             indicatorForegroundColor: const Color(0xff6EA9FF),
             onStoryShow: (storyItem, index) {
