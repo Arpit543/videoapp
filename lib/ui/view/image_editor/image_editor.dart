@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:flutter/material.dart';
@@ -131,7 +132,7 @@ class _ImageEditorState extends State<ImageEditor> {
     );
   }
 
-  /// Add music to image and create video using FFmpeg
+  /// Add music to image and create video using FFmpeg [addMusicToImage]
   Future<String?> addMusicToImage({required String imagePath, required String audioPath}) async {
     try {
       setState(() {

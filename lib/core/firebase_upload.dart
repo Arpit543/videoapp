@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -86,16 +87,18 @@ class FirebaseUpload {
     }
   }
 
-  Future<void> uploadTextStoryToStorage(String textStory, String type) async {
+  Future<void> uploadTextStoryToStorage(String textStory, String type, BuildContext context) async {
     String fileName = '${DateTime.now().millisecondsSinceEpoch}.txt';
     Reference storageRef = storage.ref().child("${auth.currentUser!.uid}/$type/$fileName");
     Uint8List data = Uint8List.fromList(utf8.encode(textStory));
 
     try {
       await storageRef.putData(data, SettableMetadata(contentType: 'text/plain'));
+      showSnackBar(message: 'Story uploaded successfully!', context: context, isError: false);
     } catch (error) {
-      throw Exception("Failed to upload text story: $error");
+      showSnackBar(message: 'Failed to upload text story: $error', context: context, isError: false);
     }
+    Get.back();
   }
 
 

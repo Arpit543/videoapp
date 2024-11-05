@@ -48,10 +48,10 @@ class _MyImagesWorkState extends State<MyImagesWork> {
                   padding: const EdgeInsets.all(10),
                   itemCount: upload.lenImages,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3, // Reduced column count for better view
+                    crossAxisCount: 3,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: 1,
+                    childAspectRatio: 0.75,
                   ),
                   itemBuilder: (context, index) {
                     return Container(
@@ -75,17 +75,10 @@ class _MyImagesWorkState extends State<MyImagesWork> {
                         },
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: Image.network(
-                            upload.imageURLs[index],
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Center(
-                                child: Icon(
-                                  Icons.error,
-                                  color: Colors.red,
-                                ),
-                              );
-                            },
+                          child: FadeInImage.assetNetwork(
+                            placeholder: 'assets/anim/placeholder.gif',
+                            image: upload.imageURLs[index],
+                            fit: BoxFit.fill,
                           ),
                         ),
                       ),
@@ -119,9 +112,8 @@ class FullScreenImageViewer extends StatelessWidget {
         child: PhotoView(
           filterQuality: FilterQuality.high,
           enableRotation: true,
-          backgroundDecoration: const BoxDecoration(
-            color: Colors.white,
-          ),
+          wantKeepAlive: false,
+          backgroundDecoration: const BoxDecoration( color: Colors.white ),
           imageProvider: NetworkImage(imageUrl),
         ),
       ),

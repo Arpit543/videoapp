@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:http/http.dart' as http;
 import 'package:videoapp/ui/view/video_edit/audio_trimmer.dart';
+
 import '../../../core/model/song_model.dart';
 
 class FindSong extends StatefulWidget {
@@ -139,7 +141,7 @@ class _FindSongState extends State<FindSong> {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: FadeInImage.assetNetwork(
-                                    placeholder: 'assets/anim/ezgif.com-crop.gif',
+                                    placeholder: 'assets/anim/placeholder.gif',
                                     image: song.artwork,
                                     fit: BoxFit.cover,
                                     width: 60,

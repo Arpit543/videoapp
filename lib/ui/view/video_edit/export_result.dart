@@ -71,25 +71,19 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.white,
-        appBar: widget.isShowWidget == true ?
-        AppBar(
+        appBar: AppBar(
           backgroundColor: const Color(0xff6EA9FF),
-          elevation: 0,
+          elevation: 1.0,
           iconTheme: const IconThemeData(color: Colors.white),
           centerTitle: true,
-          title: const Text(
-            "Edited Video",
-            style: TextStyle(
+          title: Text(
+            widget.isShowWidget == true ? "Edited Video" : "My Video",
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 20,
             ),
           ),
-        ) :
-        AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.black),
         ),
         body: Padding(
           padding: const EdgeInsets.all(5),

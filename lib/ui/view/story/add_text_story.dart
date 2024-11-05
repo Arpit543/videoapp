@@ -18,7 +18,7 @@ class _AddTextStoryScreenState extends State<AddTextStoryScreen> {
     String textStory = _textController.text.trim();
 
     if (textStory.isEmpty) {
-      Get.snackbar("Error","Please enter some text for the story.",snackPosition: SnackPosition.BOTTOM,backgroundColor: Colors.redAccent,colorText: Colors.white,);
+      Get.snackbar("Error", "Please enter some text for the story.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.redAccent, colorText: Colors.white,);
       return;
     }
 
@@ -27,16 +27,13 @@ class _AddTextStoryScreenState extends State<AddTextStoryScreen> {
     });
 
     try {
-      await upload.uploadTextStoryToStorage(textStory, "Story");
-    } catch (error) {
-      Get.snackbar("Error","Failed to upload the story. Please try again.",snackPosition: SnackPosition.BOTTOM,backgroundColor: Colors.redAccent,colorText: Colors.white,);
-    } finally {
-      Get.snackbar("Success","Story uploaded successfully.",snackPosition: SnackPosition.BOTTOM,backgroundColor: Colors.green,colorText: Colors.white);
+      await upload.uploadTextStoryToStorage(textStory, "Story", context);
       _textController.clear();
-      Get.back();
-      setState(() {
-        _isUploading = false;
-      });
+      Get.snackbar("Success", "Story uploaded successfully!", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white,);
+    } catch (error) {
+      Get.snackbar("Error", "Failed to upload the story. Please try again.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.redAccent, colorText: Colors.white,);
+    } finally {
+      setState(() { _isUploading = false; });
     }
   }
 
@@ -48,7 +45,14 @@ class _AddTextStoryScreenState extends State<AddTextStoryScreen> {
         backgroundColor: const Color(0xff6EA9FF),
         elevation: 0,
         centerTitle: true,
-        title: const Text("Add Text Story", style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold,fontSize: 20)),
+        title: const Text(
+          "Add Text Story",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Padding(
@@ -56,7 +60,10 @@ class _AddTextStoryScreenState extends State<AddTextStoryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text("Enter your story text below:",style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+            const Text(
+              "Enter your story text below:",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 10),
             TextField(
               controller: _textController,

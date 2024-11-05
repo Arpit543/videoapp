@@ -1,12 +1,14 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:http/http.dart' as http;
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
+
 import '../../../core/firebase_upload.dart';
 import '../video_edit/export_result.dart';
 
@@ -86,6 +88,7 @@ class _MyVideosWorkState extends State<MyVideosWork> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
@@ -103,7 +106,9 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                       return const Center(child: CircularProgressIndicator());
                     } else if (snapshot.hasError) {
                       return Center(child: Text('Error: ${snapshot.error}'));
-                    } else {
+                    } else if (upload.videoURLs.isEmpty) {
+                      return const Center(child: Text('No videos found.'));
+                    }  else {
                       return GridView.builder(
                         itemCount: upload.lenVideos,
                         padding: const EdgeInsets.all(8),
@@ -128,9 +133,7 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                                     if (file != null) {
                                       Get.to(VideoResultPopup(video: file, isShowWidget: false));
                                     } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Error loading video file.')),
-                                      );
+                                      showSnackBar(message: ('Error loading video file.'), context: context, isError: true);
                                     }
                                   },
                                   onLongPress: () async {
@@ -171,7 +174,7 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                                       borderRadius: BorderRadius.circular(12),
                                       child: Image.file(
                                         File(thumbnailSnapshot.data!),
-                                        fit: BoxFit.cover,
+                                        fit: BoxFit.fill,
                                       ),
                                     ),
                                   ),
@@ -182,7 +185,7 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                                     color: Colors.grey[300],
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Center(child: CircularProgressIndicator()),
+                                  child: Center(child: Image.asset('assets/anim/placeholder.gif', fit: BoxFit.fill,)),
                                 );
                               }
                             },
