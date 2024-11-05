@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 
+import '../../widget/common_theme.dart';
+
 class MyImagesWork extends StatefulWidget {
   const MyImagesWork({super.key});
 
@@ -10,13 +12,16 @@ class MyImagesWork extends StatefulWidget {
   State<MyImagesWork> createState() => _MyImagesWorkState();
 }
 
-class _MyImagesWorkState extends State<MyImagesWork> {
+class _MyImagesWorkState extends State<MyImagesWork> with TickerProviderStateMixin{
   FirebaseUpload upload = FirebaseUpload();
   late Future<void> _dataFutureImages;
+  late final AnimationController animationController;
 
   @override
   void initState() {
+    ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
     super.initState();
+    animationController = AnimationController(duration: const Duration(seconds: 5), vsync: this);
     _dataFutureImages = upload.getImageData();
   }
 
@@ -44,41 +49,38 @@ class _MyImagesWorkState extends State<MyImagesWork> {
               } else if (upload.imageURLs.isEmpty) {
                 return const Center(child: Text('No images found.'));
               } else {
-                return GridView.builder(
-                  padding: const EdgeInsets.all(10),
-                  itemCount: upload.lenImages,
+                return AnimatedGrid(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.75,
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 15,
+                    mainAxisSpacing: 15,
+                    childAspectRatio: 0.8,
                   ),
-                  itemBuilder: (context, index) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200], // Soft grey background
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 8,
-                            offset: Offset(2, 2),
-                          ),
-                        ],
+                  initialItemCount: upload.lenImages,
+                  padding: const EdgeInsets.all(10),
+                  physics: const BouncingScrollPhysics(),
+                  itemBuilder: (context, index, animation) {
+                    return FadeTransition(
+                      opacity: CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.bounceOut,
                       ),
-                      child: InkWell(
-                        onTap: () {
-                          Get.to(FullScreenImageViewer(
-                            imageUrl: upload.imageURLs[index],
-                          ));
-                        },
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: FadeInImage.assetNetwork(
-                            placeholder: 'assets/anim/placeholder.gif',
-                            image: upload.imageURLs[index],
-                            fit: BoxFit.fill,
+                      child: ScaleTransition(
+                        scale: CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.fastLinearToSlowEaseIn,
+                        ),
+                        child: InkWell(
+                          onTap: () {
+                            Get.to(FullScreenImageViewer(imageUrl: upload.imageURLs[index]));
+                          },
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: FadeInImage.assetNetwork(
+                              placeholder: 'assets/anim/placeholder.gif',
+                              image: upload.imageURLs[index],
+                              fit: BoxFit.fill,
+                            ),
                           ),
                         ),
                       ),

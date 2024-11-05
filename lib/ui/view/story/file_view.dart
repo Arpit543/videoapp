@@ -12,6 +12,8 @@ import 'package:videoapp/ui/view/story/story_view.dart';
 import 'package:videoapp/ui/view/video_edit/video_editor.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
 
+import '../../widget/common_theme.dart';
+
 class FileView extends StatefulWidget {
   final List<StoryTypeModel> pickedMedia;
   final Function(String file) videoFile;
@@ -32,6 +34,7 @@ class _FileViewState extends State<FileView> {
 
   @override
   void initState() {
+    ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
     pickedMediaStory = widget.pickedMedia;
     super.initState();
     _initializeVideoController(0);
@@ -51,9 +54,14 @@ class _FileViewState extends State<FileView> {
       _controller = VideoPlayerController.file(videoFile);
 
       await _controller!.initialize();
+
+      final videoDuration = _controller!.value.duration.inSeconds;
+      if (videoDuration > 30) {
+        showSnackBar(context: context,isError: true,message: "Please select a video up to 30 seconds.",);
+      }
+
       setState(() {
         isLoadingVideo = false;
-        length = _controller!.value.duration.inSeconds;
         _controller!.setLooping(true);
       });
     }
@@ -80,7 +88,7 @@ class _FileViewState extends State<FileView> {
             child: const Icon(Icons.arrow_back, color:  Colors.white,),
         ),
         title: const Text(
-          'Post',
+          'Add Story',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
@@ -144,7 +152,6 @@ class _FileViewState extends State<FileView> {
                     flex: 1,
                     child: IconButton(
                       onPressed: () {
-                        print("Number ==> ${pickedMediaStory[pageController.page!.toInt()]}");
                         _handleEdit(pickedMediaStory[pageController.page!.toInt()], pageController.page!.toInt());
                         },
                       icon: const Center(
@@ -163,26 +170,53 @@ class _FileViewState extends State<FileView> {
                           isLoadingUpload = true;
                         });
 
-                        List<String> data = [];
+                        bool isVideoDurationValid = true;
                         for (int i = 0; i < pickedMediaStory.length; i++) {
-                          StoryTypeModel imagePath = pickedMediaStory[i];
-                          data.add(imagePath.story);
+                          if (pickedMediaStory[i].type == StoryType.video) {
+                            final File videoFile = File(pickedMediaStory[i].story);
+                            final VideoPlayerController tempController = VideoPlayerController.file(videoFile);
+                            await tempController.initialize();
+
+                            final videoDuration = tempController.value.duration.inSeconds;
+                            if (videoDuration > 30) {
+                              isVideoDurationValid = false;
+
+                              showSnackBar(context: context,isError: true,
+                                message: "Please select videos up to 30 seconds only. Video at index ${i + 1} exceeds 30 seconds.",
+                              );
+
+                              await tempController.dispose();
+                              break;
+                            }
+                            await tempController.dispose();
+                          }
                         }
 
-                        for (int i = 0; i < data.length; i++) {
-                          await FirebaseUpload().uploadStoryInStorage(
-                            images: [data[i]],
-                            type: "Story",
-                            context: context,
-                          );
+                        if (isVideoDurationValid) {
+                          List<String> data = [];
+                          for (int i = 0; i < pickedMediaStory.length; i++) {
+                            StoryTypeModel imagePath = pickedMediaStory[i];
+                            data.add(imagePath.story);
+                          }
+
+                          for (int i = 0; i < data.length; i++) {
+                            await FirebaseUpload().uploadStoryInStorage(
+                              images: [data[i]],
+                              type: "Story",
+                              context: context,
+                            );
+                          }
+
+                          setState(() {
+                            isLoadingUpload = false;
+                          });
+
+                          Get.off(const StoryViewScreen());
+                        } else {
+                          setState(() {
+                            isLoadingUpload = false;
+                          });
                         }
-
-                        setState(() {
-                          isLoadingUpload = false;
-                        });
-
-                        Get.off(const StoryViewScreen());
-
                       },
                       icon: Center(
                         child: isLoadingUpload ? const Center(child: CircularProgressIndicator()) : Text(
@@ -237,35 +271,18 @@ class _FileViewState extends State<FileView> {
 
     switch (story.type) {
       case StoryType.image:
-        return Image.file(
-          mediaFile,
-          fit: BoxFit.cover,
-          width: MediaQuery.of(context).size.width,
-        );
+        return Image.file( mediaFile, fit: BoxFit.fill);
 
       case StoryType.video:
         if (_controller != null && _controller!.value.isInitialized) {
           return Stack(
             alignment: Alignment.center,
             children: [
-              VideoPlayer(_controller!),
+              AspectRatio(aspectRatio: _controller!.value.aspectRatio,child: VideoPlayer(_controller!)),
               Positioned(
-                bottom: 20,
                 child: IconButton(
-                  icon: Icon(
-                    _controller!.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
-                    size: 40,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      if (_controller!.value.isPlaying) {
-                        _controller!.pause();
-                      } else {
-                        _controller!.play();
-                      }
-                    });
-                  },
+                  icon: Icon(_controller!.value.isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 50, ),
+                  onPressed: () { setState(() { if (_controller!.value.isPlaying) { _controller!.pause(); } else { _controller!.play(); } }); },
                 ),
               ),
             ],

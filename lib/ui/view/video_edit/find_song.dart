@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:videoapp/ui/view/video_edit/audio_trimmer.dart';
 
 import '../../../core/model/song_model.dart';
+import '../../widget/common_theme.dart';
 
 class FindSong extends StatefulWidget {
   final Function(String file) audioFile;
@@ -29,6 +30,7 @@ class _FindSongState extends State<FindSong> {
 
   @override
   void initState() {
+    ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
     super.initState();
     fetchSongs().then((songs) {
       setState(() {

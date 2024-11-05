@@ -9,6 +9,7 @@ import 'package:video_editor/video_editor.dart';
 import 'package:video_player/video_player.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 
+import '../../widget/common_theme.dart';
 import '../my_work/tab_vew.dart';
 
 Future<void> _getImageDimension(File file, {required Function(Size) onResult}) async {
@@ -42,6 +43,7 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
 
   @override
   void initState() {
+    ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
     super.initState();
     _controller = VideoPlayerController.file(widget.video)
       ..initialize().then((_) {
@@ -221,6 +223,7 @@ class _CoverResultPopupState extends State<CoverResultPopup> {
 
   @override
   void initState() {
+    ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
     super.initState();
     _getImageDimension(
       widget.cover,

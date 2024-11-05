@@ -15,6 +15,8 @@ import 'package:videoapp/ui/view/my_work/tab_vew.dart';
 import 'package:videoapp/ui/view/video_edit/export_result.dart';
 import 'package:videoapp/ui/view/video_edit/find_song.dart';
 
+import '../../widget/common_theme.dart';
+
 class ImageEditor extends StatefulWidget {
   final File imageFile;
   final Function(String file) imageFileFunction;
@@ -33,7 +35,12 @@ class _ImageEditorState extends State<ImageEditor> {
   ValueNotifier<bool> isMute = ValueNotifier(false);
   File? audio;
 
-  // Convert Uint8List image bytes to a File
+  @override
+  void initState() {
+    ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
+    super.initState();
+  }
+
   Future<File> _convertBytesToFile(Uint8List imageBytes) async {
     final tempDir = await getTemporaryDirectory();
     final file = File('${tempDir.path}/${widget.imageFile.path.split("/").last}');

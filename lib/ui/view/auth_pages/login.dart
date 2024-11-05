@@ -6,6 +6,8 @@ import 'package:videoapp/ui/widget/common_button.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
 import 'package:videoapp/ui/widget/common_textfield.dart';
 
+import '../../widget/common_theme.dart';
+
 class Login extends StatefulWidget {
   const Login({super.key});
 
@@ -18,7 +20,13 @@ class _LoginState extends State<Login> {
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  bool _isLoading = false; // Loading state for button
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {

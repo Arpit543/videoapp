@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -26,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
   FirebaseUpload upload = FirebaseUpload();
   File? galleryFile;
   File? cameraFile;
-
   String name = "User";
 
   List<StoryTypeModel> storyItems = [];
@@ -55,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Get.to(VideoEditor(videoFile: File(pickedFile.path), videoFileFunction: (String file) { }, isStory: false,));
       }
     } catch (e) {
-      if(mounted) showSnackBar(context: context, message: "Error picking video: $e");
+      if(mounted) showSnackBar(context: context, message: "Error picking video: $e",isError: true);
     }
   }
 

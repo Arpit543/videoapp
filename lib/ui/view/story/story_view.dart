@@ -1,11 +1,14 @@
-import 'dart:async'; // Import to use Timer
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'package:story_view/story_view.dart';
 import 'package:video_player/video_player.dart';
 import 'package:videoapp/core/firebase_upload.dart';
-import 'package:http/http.dart' as http;
+
+import '../../widget/common_theme.dart';
 
 class StoryViewScreen extends StatefulWidget {
   const StoryViewScreen({super.key});
@@ -23,14 +26,15 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
 
   @override
   void initState() {
+    ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
     super.initState();
     _dataFutureImages = upload.getStoryData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadStories();
+      loadStories();
     });
   }
 
-  Future<void> _loadStories() async {
+  Future<void> loadStories() async {
     try {
       List<String> storyItems = await _dataFutureImages;
       getInitializeList(storyItems);
@@ -49,10 +53,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
           storyData.add(
             StoryItem.pageImage(
               url: item,
-              caption: const Text(
-                "A beautiful image",
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
+              duration: const Duration(seconds: 5),
               controller: storyController,
               imageFit: BoxFit.cover,
             ),
@@ -65,6 +66,8 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
           storyData.add(
             StoryItem.text(
               title: storyText,
+              duration: const Duration(seconds: 10),
+              textOuterPadding: const EdgeInsets.all(10.0),
               backgroundColor: Colors.blueAccent,
               textStyle: const TextStyle(fontSize: 24, color: Colors.white),
             ),
@@ -115,6 +118,8 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
           storyData.add(
             StoryItem.pageVideo(
               videoUrl,
+              duration: _videoController!.value.duration,
+              shown: false,
               controller: storyController,
             ),
           );

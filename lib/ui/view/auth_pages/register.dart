@@ -6,6 +6,8 @@ import 'package:videoapp/ui/widget/common_button.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
 import 'package:videoapp/ui/widget/common_textfield.dart';
 
+import '../../widget/common_theme.dart';
+
 class Register extends StatefulWidget {
   const Register({super.key});
 
@@ -21,7 +23,13 @@ class _RegisterState extends State<Register> {
   final cPasswordController = TextEditingController();
 
   FirebaseUpload upload = FirebaseUpload();
-  bool _isLoading = false; // Added loading state
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -10,6 +10,7 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
 
 import '../../../core/firebase_upload.dart';
+import '../../widget/common_theme.dart';
 import '../video_edit/export_result.dart';
 
 class MyVideosWork extends StatefulWidget {
@@ -27,6 +28,7 @@ class _MyVideosWorkState extends State<MyVideosWork> {
 
   @override
   void initState() {
+    ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
     super.initState();
     _dataFutureVideos = upload.getVideoData();
   }

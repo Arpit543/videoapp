@@ -1,9 +1,12 @@
 import 'dart:io';
+
+import 'package:easy_audio_trimmer/easy_audio_trimmer.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:easy_audio_trimmer/easy_audio_trimmer.dart';
 import 'package:videoapp/core/model/song_model.dart';
+
+import '../../widget/common_theme.dart';
 
 class AudioTrimmerViewDemo extends StatefulWidget {
   final Song song;
@@ -28,6 +31,7 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
 
   @override
   void initState() {
+    ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
     data = widget.song;
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:videoapp/ui/view/my_work/my_videos.dart';
 import 'package:videoapp/ui/view/my_work/my_images.dart';
+import 'package:videoapp/ui/view/my_work/my_videos.dart';
+
+import '../../widget/common_theme.dart';
 
 class MyWorkTab extends StatefulWidget {
   final int index;
@@ -18,6 +20,7 @@ class _MyWorkTabState extends State<MyWorkTab>
 
   @override
   void initState() {
+    ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
     super.initState();
     tabController = TabController(
       length: 2,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:videoapp/core/firebase_upload.dart';
 
+import '../../widget/common_theme.dart';
+
 class AddTextStoryScreen extends StatefulWidget {
   const AddTextStoryScreen({super.key});
 
@@ -13,6 +15,12 @@ class _AddTextStoryScreenState extends State<AddTextStoryScreen> {
   final TextEditingController _textController = TextEditingController();
   final FirebaseUpload upload = FirebaseUpload();
   bool _isUploading = false;
+
+  @override
+  void initState() {
+    ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
+    super.initState();
+  }
 
   Future<void> _uploadTextStory() async {
     String textStory = _textController.text.trim();

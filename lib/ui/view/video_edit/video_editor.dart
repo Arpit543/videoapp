@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -52,21 +51,20 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
     minDuration: const Duration(seconds: 1),
     maxDuration: const Duration(seconds: 30),
     coverThumbnailsQuality: 100,
-    trimStyle: TrimSliderStyle(
-        iconSize: 10,
-        positionLineColor: Colors.yellowAccent,
+    trimStyle: const TrimSliderStyle(
+        iconSize: 14,
+        positionLineColor: Colors.cyanAccent,
         iconColor: Colors.white,
+        edgesSize: 6,
+        onTrimmingColor: Color(0xff6EA9FF),
+        onTrimmedColor: Colors.cyan,
+        borderRadius: BorderSide.strokeAlignOutside,
         edgesType: TrimSliderEdgesType.circle),
     trimThumbnailsQuality: 100,
   );
 
   @override
   void initState() {
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Color(0xff6EA9FF)
-      )
-    );
     ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
     _initializeController();
     super.initState();
@@ -435,7 +433,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
 
     await ExportService.runFFmpegCommand(
       execute,
-      onError: (e, s) => showSnackBar(context: context, message: "Error on Export cover"),
+      onError: (e, s) => showSnackBar(context: context, message: "Error on Export cover",isError: true),
       onCompleted: (cover) {
         if (!mounted) return;
         showDialog(context: context,builder: (_) => CoverResultPopup(cover: cover),);
@@ -519,7 +517,7 @@ class _VideoEditorState extends State<VideoEditor> with ChangeNotifier {
           } else {
             _isExporting.value = false;
             isLoading = false;
-            showSnackBar(context: context, message: "Failed to export video.");
+            showSnackBar(context: context, message: "Failed to export video.",isError: true);
           }
         }
       },
