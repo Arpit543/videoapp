@@ -5,6 +5,7 @@ class ThemeUtils {
       SystemUiOverlayStyle(
         statusBarColor: color,
         statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: color,
         systemNavigationBarIconBrightness: Brightness.light,
       ),
     );

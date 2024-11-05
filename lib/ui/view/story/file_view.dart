@@ -5,13 +5,13 @@ import 'package:get/get.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:video_editor/video_editor.dart';
 import 'package:video_player/video_player.dart';
-import 'package:videoapp/core/firebase_upload.dart';
 import 'package:videoapp/ui/view/home_screen.dart';
 import 'package:videoapp/ui/view/image_editor/image_editor.dart';
 import 'package:videoapp/ui/view/story/story_view.dart';
 import 'package:videoapp/ui/view/video_edit/video_editor.dart';
 import 'package:videoapp/ui/widget/common_snackbar.dart';
 
+import '../../../core/firebase_upload.dart';
 import '../../widget/common_theme.dart';
 
 class FileView extends StatefulWidget {
@@ -93,143 +93,149 @@ class _FileViewState extends State<FileView> {
         ),
       ),
       body: SafeArea(
-        child: Column(
+        child: Stack(
+          alignment: Alignment.bottomCenter,
           children: [
-            Expanded(
-              child: PageView.builder(
-                controller: pageController,
-                itemCount: pickedMediaStory.length,
-                onPageChanged: (index) {
-                  if (pickedMediaStory[index].type == StoryType.video) {
-                    _initializeVideoController(index);
-                  } else {
-                    setState(() {
-                      _controller?.dispose();
-                      _controller = null;
-                    });
-                  }
-                },
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.all(5),
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width,
-                      child: customStoryView(story: pickedMediaStory[index]),
-                    ),
-                  );
-                },
-              ),
+            PageView.builder(
+              controller: pageController,
+              itemCount: pickedMediaStory.length,
+              physics: const BouncingScrollPhysics(),
+              scrollDirection: Axis.horizontal,
+              allowImplicitScrolling: true,
+              onPageChanged: (index) {
+                if (pickedMediaStory[index].type == StoryType.video) {
+                  _initializeVideoController(index);
+                } else {
+                  setState(() {
+                    _controller?.dispose();
+                    _controller = null;
+                  });
+                }
+              },
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.all(5),
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    child: customStoryView(story: pickedMediaStory[index]),
+                  ),
+                );
+              },
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: SmoothPageIndicator(
-                controller: pageController,
-                count: pickedMediaStory.length,
-                effect: const ExpandingDotsEffect(
-                  activeDotColor: Color(0xff6EA9FF),
-                  dotHeight: 10,
-                  dotWidth: 10,
+            Positioned(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: SmoothPageIndicator(
+                  controller: pageController,
+                  count: pickedMediaStory.length,
+                  effect: const ExpandingDotsEffect(
+                    activeDotColor: Colors.black,
+                    dotHeight: 5,
+                    dotWidth: 5,
+                    dotColor: Colors.blue,
+                    spacing: 5,
+                    radius: 10,
+                    expansionFactor: 5,
+                    offset: 16,
+                    strokeWidth: 1.0,
+                  ),
                 ),
               ),
             ),
-            Container(
-              height: 50,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0xff6EA9FF),
-                    blurRadius: 8,
-                    offset: Offset(2, 2),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0xff6EA9FF),
+              blurRadius: 8,
+              offset: Offset(2, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              flex: 1,
+              child: IconButton(
+                onPressed: () {
+                  _handleEdit(pickedMediaStory[pageController.page!.toInt()], pageController.page!.toInt());
+                },
+                icon: const Center(
+                  child: Text(
+                    "Edit",
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                ],
+                ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: IconButton(
-                      onPressed: () {
-                        _handleEdit(pickedMediaStory[pageController.page!.toInt()], pageController.page!.toInt());
-                        },
-                      icon: const Center(
-                        child: Text(
-                          "Edit",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
+            ),
+            Expanded(
+              flex: 1,
+              child: IconButton(
+                onPressed: () async {
+                  setState(() {
+                    isLoadingUpload = true;
+                  });
+
+                  bool isVideoDurationValid = true;
+                  for (int i = 0; i < pickedMediaStory.length; i++) {
+                    if (pickedMediaStory[i].type == StoryType.video) {
+                      final File videoFile = File(pickedMediaStory[i].story);
+                      final VideoPlayerController tempController = VideoPlayerController.file(videoFile);
+                      await tempController.initialize();
+
+                      final videoDuration = tempController.value.duration.inSeconds;
+                      if (videoDuration > 30) {
+                        isVideoDurationValid = false;
+
+                        showSnackBar(context: context,isError: true,
+                          message: "Please select videos up to 30 seconds only. Video at index ${i + 1} exceeds 30 seconds.",
+                        );
+
+                        await tempController.dispose();
+                        break;
+                      }
+                      await tempController.dispose();
+                    }
+                  }
+
+                  if (isVideoDurationValid) {
+                    List<String> data = [];
+                    for (int i = 0; i < pickedMediaStory.length; i++) {
+                      StoryTypeModel imagePath = pickedMediaStory[i];
+                      data.add(imagePath.story);
+                    }
+
+                    for (int i = 0; i < data.length; i++) {
+                      await FirebaseUpload().uploadStoryInStorage(images: [data[i]],type: "Story",context: context,);
+                    }
+
+                    setState(() {
+                      isLoadingUpload = false;
+                    });
+
+                    Get.off(const StoryViewScreen());
+                  } else {
+                    setState(() {
+                      isLoadingUpload = false;
+                    });
+                  }
+                },
+                icon: Center(
+                  child: isLoadingUpload ? const Center(child: CircularProgressIndicator()) : Text(
+                    "Next",
+                    style: TextStyle(
+                      color: const CropGridStyle().selectedBoundariesColor,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Expanded(
-                    flex: 1,
-                    child: IconButton(
-                      onPressed: () async {
-                        setState(() {
-                          isLoadingUpload = true;
-                        });
-
-                        bool isVideoDurationValid = true;
-                        for (int i = 0; i < pickedMediaStory.length; i++) {
-                          if (pickedMediaStory[i].type == StoryType.video) {
-                            final File videoFile = File(pickedMediaStory[i].story);
-                            final VideoPlayerController tempController = VideoPlayerController.file(videoFile);
-                            await tempController.initialize();
-
-                            final videoDuration = tempController.value.duration.inSeconds;
-                            if (videoDuration > 30) {
-                              isVideoDurationValid = false;
-
-                              showSnackBar(context: context,isError: true,
-                                message: "Please select videos up to 30 seconds only. Video at index ${i + 1} exceeds 30 seconds.",
-                              );
-
-                              await tempController.dispose();
-                              break;
-                            }
-                            await tempController.dispose();
-                          }
-                        }
-
-                        if (isVideoDurationValid) {
-                          List<String> data = [];
-                          for (int i = 0; i < pickedMediaStory.length; i++) {
-                            StoryTypeModel imagePath = pickedMediaStory[i];
-                            data.add(imagePath.story);
-                          }
-
-                          for (int i = 0; i < data.length; i++) {
-                            await FirebaseUpload().uploadStoryInStorage(
-                              images: [data[i]],
-                              type: "Story",
-                              context: context,
-                            );
-                          }
-
-                          setState(() {
-                            isLoadingUpload = false;
-                          });
-
-                          Get.off(const StoryViewScreen());
-                        } else {
-                          setState(() {
-                            isLoadingUpload = false;
-                          });
-                        }
-                      },
-                      icon: Center(
-                        child: isLoadingUpload ? const Center(child: CircularProgressIndicator()) : Text(
-                          "Next",
-                          style: TextStyle(
-                            color: const CropGridStyle().selectedBoundariesColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ],

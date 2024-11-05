@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:videoapp/core/firebase_upload.dart';
+import 'package:videoapp/ui/widget/common_snackbar.dart';
 
 import '../../widget/common_theme.dart';
 
@@ -26,7 +26,7 @@ class _AddTextStoryScreenState extends State<AddTextStoryScreen> {
     String textStory = _textController.text.trim();
 
     if (textStory.isEmpty) {
-      Get.snackbar("Error", "Please enter some text for the story.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.redAccent, colorText: Colors.white,);
+      showSnackBar(context: context, isError: true, message: "Please enter some text for the story.");
       return;
     }
 
@@ -37,9 +37,9 @@ class _AddTextStoryScreenState extends State<AddTextStoryScreen> {
     try {
       await upload.uploadTextStoryToStorage(textStory, "Story", context);
       _textController.clear();
-      Get.snackbar("Success", "Story uploaded successfully!", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white,);
+      if(mounted) showSnackBar(context: context, isError: false, message: "Story uploaded successfully!");
     } catch (error) {
-      Get.snackbar("Error", "Failed to upload the story. Please try again.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.redAccent, colorText: Colors.white,);
+      if(mounted) showSnackBar(context: context, isError: true, message: "Failed to upload the story. Please try again.");
     } finally {
       setState(() { _isUploading = false; });
     }
