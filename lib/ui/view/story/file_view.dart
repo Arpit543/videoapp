@@ -252,8 +252,11 @@ class _FileViewState extends State<FileView> {
       Get.to(ImageEditor(
         imageFile: File(storyItems.story),
         imageFileFunction: (file) {
-          pickedMediaStory[index] = StoryTypeModel(story: file, type: StoryType.image);
-          },
+          setState(() {
+            pickedMediaStory[index] = StoryTypeModel(story: file, type: StoryType.image);
+          });
+          pageController.jumpToPage(index);
+        },
         isStory: true,
       ));
     } else if (storyItems.story.contains('.mp4') || storyItems.story.contains('.mov') || storyItems.story.contains('.avi') ||
@@ -261,8 +264,12 @@ class _FileViewState extends State<FileView> {
       Get.to(VideoEditor(
         videoFileForEditing: File(storyItems.story),
         videoFileForEditingFunction: (file) {
+          setState(() {
             pickedMediaStory[index] = StoryTypeModel(story: file, type: StoryType.video);
-          },
+            _initializeVideoController(index);
+          });
+          pageController.jumpToPage(index);
+        },
         navigateForIsStory: true,
       ));
     } else {
