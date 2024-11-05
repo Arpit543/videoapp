@@ -22,83 +22,48 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin{
   final ImagePicker _picker = ImagePicker();
   FirebaseUpload upload = FirebaseUpload();
   File? galleryFile;
   File? cameraFile;
   String name = "User";
-
   List<StoryTypeModel> storyItems = [];
+
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
 
   @override
   void initState() {
+
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    );
+
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.bounceInOut,
+    );
+
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _controller.stop();
+      }
+    });
+
+    _controller.forward();
+
     super.initState();
     _loadUserName();
   }
 
-  Future<void> _loadUserName() async {
-    String? userName = Constants.getString(Constants.name);
-    setState(() {
-      name = userName ?? "User";
-    });
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
-  Future<void> _pickVideo(int val) async {
-    try {
-      final pickedFile = await _picker.pickVideo(source: val == 0 ? ImageSource.gallery : ImageSource.camera,);
-
-      if (pickedFile != null) {
-        setState(() {
-          galleryFile = File(pickedFile.path);
-        });
-        Get.to(VideoEditor(videoFile: File(pickedFile.path), videoFileFunction: (String file) { }, isStory: false,));
-      }
-    } catch (e) {
-      if(mounted) showSnackBar(context: context, message: "Error picking video: $e",isError: true);
-    }
-  }
-
-  Future<void> _pickImages(int val) async {
-    final pickedFile = await _picker.pickImage(source: val == 0 ? ImageSource.gallery : ImageSource.camera,);
-    if (pickedFile != null) {
-      setState(() {
-        cameraFile = File(pickedFile.path);
-      });
-      Get.to(ImageEditor(imageFile: cameraFile!, imageFileFunction: (file) { }, isStory: false,));
-    }
-  }
-
-  Future<void> addMedia() async {
-    try {
-
-      final pickedFiles = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowMultiple: true,
-        withData: true,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'mov', 'mp4', 'mkv','avi'],
-      );
-
-      if (pickedFiles != null) {
-        for (final file in pickedFiles.files) {
-          final path = file.path;
-          if (path != null) {
-            if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png')) {
-              storyItems.add(StoryTypeModel(story: path, type: StoryType.image));
-            } else if (path.endsWith('.mov') || path.endsWith('.mp4') || path.endsWith('.mkv') || path.endsWith('.avi')) {
-              storyItems.add(StoryTypeModel(story: path, type: StoryType.video));
-            }
-          }
-        }
-      }
-      setState(() {});
-      if (storyItems.isNotEmpty) {
-        Get.to(FileView(pickedMedia: storyItems, videoFile: (String file) {  },));
-      }
-    } catch (e) {
-      if(mounted) { showSnackBar(context: context, message: "Error picking media: $e", isError: true); }
-    }
-  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -110,30 +75,30 @@ class _HomeScreenState extends State<HomeScreen> {
         leading: Row(
           children: [
             Tooltip(
-            message: 'Open Export Menu',
-            child: PopupMenuButton(
-              color: Colors.white,
-              elevation: 0.5,
-              padding: const EdgeInsets.all(5),
-              shadowColor: Colors.grey,
-              icon: const Icon(
-                Icons.add_box_outlined,
+              message: 'Open Story Menu',
+              child: PopupMenuButton(
                 color: Colors.white,
+                elevation: 0.5,
+                padding: const EdgeInsets.all(5),
+                shadowColor: Colors.grey,
+                icon: const Icon(
+                  Icons.add_box_outlined,
+                  color: Colors.white,
+                ),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    onTap: () {
+                      Get.to(const AddTextStoryScreen());
+                      },
+                    child: const Text('Add Text'),
+                  ),
+                  PopupMenuItem(
+                    onTap: () => addMediaToStory(),
+                    child: const Text('Add Media'),
+                  ),
+                ],
               ),
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  onTap: () {
-                    Get.to(const AddTextStoryScreen());
-                  },
-                  child: const Text('Add Text'),
-                ),
-                PopupMenuItem(
-                  onTap: () => addMedia(),
-                  child: const Text('Add Media'),
-                ),
-              ],
             ),
-          ),
           ],
         ),
         title: Text(
@@ -183,38 +148,42 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const Divider(height: 20, color: Color(0xff6EA9FF)),
               Expanded(
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  padding: const EdgeInsets.all(8),
-                  children: [
-                    _gridItem(
-                      label: "Gallery Video",
-                      icon: Icons.video_library,
-                      onTap: () => _pickVideo(0),
-                    ),
-                    _gridItem(
-                      label: "Camera Video",
-                      icon: Icons.videocam,
-                      onTap: () => _pickVideo(1),
-                    ),
-                    _gridItem(
-                      label: "Gallery Image",
-                      icon: Icons.image,
-                      onTap: () => _pickImages(0),
-                    ),
-                    _gridItem(
-                      label: "Camera Image",
-                      icon: Icons.camera_alt,
-                      onTap: () => _pickImages(1),
-                    ),
-                    _gridItem(
-                      label: "My Work",
-                      icon: Icons.work,
-                      onTap: () => Get.to(const MyWorkTab(index: 0)),
-                    ),
-                  ],
+                child: ScaleTransition(
+                  scale: _animation,
+                  child: GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    padding: const EdgeInsets.all(8),
+                    physics: const BouncingScrollPhysics(),
+                    children: [
+                      gridItemHomeScreen(
+                        label: "Gallery Video",
+                        icon: Icons.video_library,
+                        onTap: () => _pickVideo(0),
+                      ),
+                      gridItemHomeScreen(
+                        label: "Camera Video",
+                        icon: Icons.videocam,
+                        onTap: () => _pickVideo(1),
+                      ),
+                      gridItemHomeScreen(
+                        label: "Gallery Image",
+                        icon: Icons.image,
+                        onTap: () => _pickImages(0),
+                      ),
+                      gridItemHomeScreen(
+                        label: "Camera Image",
+                        icon: Icons.camera_alt,
+                        onTap: () => _pickImages(1),
+                      ),
+                      gridItemHomeScreen(
+                        label: "My Work",
+                        icon: Icons.work,
+                        onTap: () => Get.to(const MyWorkTab(index: 0),transition: Transition.cupertino),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -224,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _gridItem({required String label, required IconData icon, required Function onTap}) {
+  Widget gridItemHomeScreen({required String label, required IconData icon, required Function onTap}) {
     return InkWell(
       onTap: () => onTap(),
       child: Container(
@@ -257,10 +226,93 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  ///   Get Data from Shared Preferences[_loadUserName]
+  Future<void> _loadUserName() async {
+    String? userName = Constants.getString(Constants.name);
+    setState(() {
+      name = userName ?? "User";
+    });
+  }
+
+  ///   Select Video From Gallery and Camera [_pickVideo]
+  Future<void> _pickVideo(int val) async {
+    try {
+      final pickedFile = await _picker.pickVideo(source: val == 0 ? ImageSource.gallery : ImageSource.camera,);
+
+      if (pickedFile != null && mounted) {
+        setState(() {
+          galleryFile = File(pickedFile.path);
+        });
+
+        Navigator.push(context, PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => VideoEditor(videoFileForEditing: File(pickedFile.path), videoFileForEditingFunction: (String file) { }, navigateForIsStory: false,),
+          transitionDuration: const Duration(seconds: 1),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            var begin = const Offset(0.0, 1.0);
+            var end = Offset.zero;
+            var curve = Curves.ease;
+            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+
+            return SlideTransition( position: animation.drive(tween), child: child );
+            },
+        ));
+      }
+    } catch (e) {
+      if(mounted) showSnackBar(context: context, message: "Error picking video: $e",isError: true);
+    }
+  }
+
+  ///   Select Image From Gallery and Camera [_pickImages]
+  Future<void> _pickImages(int val) async {
+    final pickedFile = await _picker.pickImage(source: val == 0 ? ImageSource.gallery : ImageSource.camera,);
+    if (pickedFile != null) {
+      setState(() {
+        cameraFile = File(pickedFile.path);
+      });
+
+      Get.to(
+          ImageEditor(imageFile: cameraFile!, imageFileFunction: (file) { }, isStory: false),
+          transition: Transition.rightToLeftWithFade
+      );
+    }
+  }
+
+  ///   Select Video & Image From Gallery For Story post [addMediaToStory]
+  Future<void> addMediaToStory() async {
+    try {
+
+      final pickedFiles = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowMultiple: true,
+        withData: true,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'mov', 'mp4', 'mkv','avi'],
+      );
+
+      if (pickedFiles != null) {
+        for (final file in pickedFiles.files) {
+          final path = file.path;
+          if (path != null) {
+            if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png')) {
+              storyItems.add(StoryTypeModel(story: path, type: StoryType.image));
+            } else if (path.endsWith('.mov') || path.endsWith('.mp4') || path.endsWith('.mkv') || path.endsWith('.avi')) {
+              storyItems.add(StoryTypeModel(story: path, type: StoryType.video));
+            }
+          }
+        }
+      }
+      setState(() {});
+      if (storyItems.isNotEmpty) {
+        Get.to(FileView(pickedMedia: storyItems, videoFile: (String file) {  },));
+      }
+    } catch (e) {
+      if(mounted) { showSnackBar(context: context, message: "Error picking media: $e", isError: true); }
+    }
+  }
+
 }
 
 enum StoryType { image, video }
-
 
 class StoryTypeModel {
   final String story;

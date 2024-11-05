@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -21,9 +22,9 @@ class FindSong extends StatefulWidget {
 }
 
 class _FindSongState extends State<FindSong> {
-  ValueNotifier<int> isSelectedPlayIndex = ValueNotifier(-1);
-  final AudioPlayer player = AudioPlayer();
-  final TextEditingController searchController = TextEditingController();
+  final isSelectedPlayIndex = ValueNotifier(-1);
+  final player = AudioPlayer();
+  final searchController = TextEditingController();
   bool isLoading = false;
   List<Song> allSongs = [];
   List<Song> filteredSongs = [];
@@ -97,7 +98,7 @@ class _FindSongState extends State<FindSong> {
       body: Stack(
         children: [
           SafeArea(
-            child: filteredSongs.isNotEmpty ?
+            child: filteredSongs.isEmpty ? const Center(child: Text('No songs found')) :
             ListView.builder(
               itemCount: filteredSongs.length,
               itemBuilder: (context, index) {
@@ -198,13 +199,8 @@ class _FindSongState extends State<FindSong> {
                   ),
                 );
               },
-            )
-                : const Center(child: Text('No songs found')),
+            ),
           ),
-          // if (isLoading)
-          //   const Center(
-          //     child: CircularProgressIndicator(),
-          //   ),
         ],
       ),
     );
@@ -220,17 +216,12 @@ class _FindSongState extends State<FindSong> {
       if (response.statusCode == 200) {
         final File audioFile = File(audioPath);
         await audioFile.writeAsBytes(response.bodyBytes).then((_) async {
-          Navigator.pushReplacement(context,MaterialPageRoute(
-              builder: (context) => AudioTrimmerViewDemo(
-                audioFileForTrim: audioFile,
-                isImage: widget.isImageOrVideo,
-                song: map,
-                audioFile: (file) {
-                  widget.audioFile(file);
-                },
-              ),
-            ),
-          );
+          Get.off(AudioTrimmerViewDemo(
+            audioFileForTrim: audioFile,
+            isImage: widget.isImageOrVideo,
+            song: map,
+            audioFile: (file) { widget.audioFile(file); },
+          ));
         }).catchError((error) {
           debugPrint("Failed to navigate using audio");
         });

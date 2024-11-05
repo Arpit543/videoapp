@@ -44,10 +44,10 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
       isLoading = true;
     });
     await _trimmer.loadAudio(audioFile: widget.audioFileForTrim);
+    _startPlayback();
     setState(() {
       isLoading = false;
     });
-    _startPlayback();
   }
 
   void _startPlayback() {
@@ -218,6 +218,9 @@ class _AudioTrimmerViewDemoState extends State<AudioTrimmerViewDemo> {
                     scrubberPaintColor: Colors.lightBlueAccent,
                     sideTapSize: 10,
                   ),
+                  onChangePlaybackState: (isPlaying) {
+                    _trimmer.audioPlaybackControl(startValue: startValue, endValue: endValue);
+                  },
                   durationTextStyle: const TextStyle(color: Colors.black),
                   allowAudioSelection: true,
                   paddingFraction: 2.0,

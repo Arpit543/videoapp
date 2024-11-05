@@ -57,7 +57,7 @@ class _FileViewState extends State<FileView> {
 
       final videoDuration = _controller!.value.duration.inSeconds;
       if (videoDuration > 30) {
-        showSnackBar(context: context,isError: true,message: "Please select a video up to 30 seconds.",);
+        if(mounted) showSnackBar(context: context,isError: true,message: "Please select a video up to 30 seconds.",);
       }
 
       setState(() {
@@ -194,9 +194,7 @@ class _FileViewState extends State<FileView> {
                       if (videoDuration > 30) {
                         isVideoDurationValid = false;
 
-                        showSnackBar(context: context,isError: true,
-                          message: "Please select videos up to 30 seconds only. Video at index ${i + 1} exceeds 30 seconds.",
-                        );
+                        showSnackBar(context: context,isError: true,message: "Please select videos up to 30 seconds only. Video at index ${i + 1} exceeds 30 seconds.",);
 
                         await tempController.dispose();
                         break;
@@ -261,11 +259,11 @@ class _FileViewState extends State<FileView> {
     } else if (storyItems.story.contains('.mp4') || storyItems.story.contains('.mov') || storyItems.story.contains('.avi') ||
         storyItems.story.contains('.mp3') || storyItems.story.contains('.mkv')) {
       Get.to(VideoEditor(
-        videoFile: File(storyItems.story),
-        videoFileFunction: (file) {
+        videoFileForEditing: File(storyItems.story),
+        videoFileForEditingFunction: (file) {
             pickedMediaStory[index] = StoryTypeModel(story: file, type: StoryType.video);
           },
-        isStory: true,
+        navigateForIsStory: true,
       ));
     } else {
       showSnackBar(context: context, isError: true, message: "Unsupported file type for editing: ${storyItems.story}");

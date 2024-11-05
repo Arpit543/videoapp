@@ -135,7 +135,7 @@ class _MyVideosWorkState extends State<MyVideosWork> {
                                     if (file != null) {
                                       Get.to(VideoResultPopup(video: file, isShowWidget: false));
                                     } else {
-                                      showSnackBar(message: ('Error loading video file.'), context: context, isError: true);
+                                      showSnackBar(context: context, message: ('Error loading video file.'), isError: true);
                                     }
                                   },
                                   onLongPress: () async {

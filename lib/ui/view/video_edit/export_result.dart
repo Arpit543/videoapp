@@ -8,6 +8,7 @@ import 'package:path/path.dart' as path;
 import 'package:video_editor/video_editor.dart';
 import 'package:video_player/video_player.dart';
 import 'package:videoapp/core/firebase_upload.dart';
+import 'package:videoapp/ui/widget/common_snackbar.dart';
 
 import '../../widget/common_theme.dart';
 import '../my_work/tab_vew.dart';
@@ -144,7 +145,10 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
             ],
           ),
         ),
-        bottomNavigationBar: widget.isShowWidget == true ? Container(
+        bottomNavigationBar:
+          widget.isShowWidget == false ?
+            const SizedBox.shrink() :
+              Container(
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
@@ -152,7 +156,7 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                 BoxShadow(
                   color: Color(0xff6EA9FF),
                   blurRadius: 8,
-                  offset: Offset(0, -2), // Adjust shadow for better effect
+                  offset: Offset(0, -2),
                 ),
               ],
             ),
@@ -185,7 +189,7 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                           await FirebaseUpload().uploadImageVideoInStorage(file: widget.video,type: "Videos",context: context,);
                           Get.off(const MyWorkTab(index: 1));
                         } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Upload failed: $e")),);
+                          showSnackBar(context: context, isError: true, message: "Failed to Upload $e");
                         } finally {
                           setState(() { _isLoading = false; });
                         }
@@ -201,7 +205,7 @@ class _VideoResultPopupState extends State<VideoResultPopup> {
                 ),
               ],
             ),
-          ) : const SizedBox.shrink()
+          ),
       ),
     );
   }
