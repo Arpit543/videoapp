@@ -215,6 +215,7 @@ class FirebaseUpload {
           'name': name,
           'email': email,
           'password': password,
+          'session': 3,
         };
 
         await databaseMethod.addUser(user.uid, userInfo);
@@ -254,6 +255,10 @@ class FirebaseUpload {
             await Constants.setString(Constants.name, event.snapshot.child("name").value.toString());
             await Constants.setString(Constants.userId, event.snapshot.child("id").value.toString());
             showSnackBar(message: 'You Have Been Logged In Successfully!',context: context,isError: false,);
+
+            Future.delayed(Duration(hours: int.parse(event.snapshot.child("session").value.toString())),() {
+              logout(context);
+            });
 
             Get.offAll(const HomeScreen());
           });
