@@ -118,7 +118,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
           storyData.add(
             StoryItem.pageVideo(
               videoUrl,
-              duration: _videoController!.value.duration,
+              duration: (_videoController!.value.duration > const Duration(seconds: 30)) ? const Duration(seconds: 30) : _videoController!.value.duration,
               shown: false,
               controller: storyController,
             ),

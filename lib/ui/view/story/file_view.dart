@@ -31,9 +31,15 @@ class _FileViewState extends State<FileView> {
   bool isLoadingUpload = false;
   final double height = 60;
   int length = 0;
+  final GlobalKey _tooltipKey = GlobalKey();
 
   @override
   void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final dynamic tooltip = _tooltipKey.currentState;
+      tooltip?.ensureTooltipVisible();
+    });
+
     ThemeUtils.setStatusBarColor(const Color(0xff6EA9FF));
     pickedMediaStory = widget.pickedMedia;
     super.initState();
@@ -84,13 +90,47 @@ class _FileViewState extends State<FileView> {
         automaticallyImplyLeading: false,
         centerTitle: true,
         leading: InkWell(
-            onTap: () { pickedMediaStory.clear(); _controller?.dispose(); Get.back();},
-            child: const Icon(Icons.arrow_back, color:  Colors.white,),
+          onTap: () { pickedMediaStory.clear(); _controller?.dispose(); Get.back();},
+          child: const Icon(Icons.arrow_back, color:  Colors.white,),
         ),
         title: const Text(
           'Add Story',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
+        actions: [
+          Tooltip(
+            key: _tooltipKey,
+            showDuration: const Duration(seconds: 2),
+            exitDuration: const Duration(seconds: 2),
+            padding: const EdgeInsets.all(5),
+            height: 35,
+            textStyle: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.normal),
+            message: "You can discard any media",
+            child: IconButton(
+                onPressed: () {
+                  if (pickedMediaStory.isEmpty && pageController.page!.toInt() == 0) {
+                    Get.offAll(const HomeScreen());
+                  } else {
+                    int currentPage = pageController.page!.toInt();
+                    if (currentPage < pickedMediaStory.length && currentPage >= 0) {
+                      setState(() {
+                        pickedMediaStory.removeAt(currentPage);
+                        if (pickedMediaStory.isNotEmpty) {
+                          if (currentPage >= pickedMediaStory.length) {
+                            pageController.jumpToPage(pickedMediaStory.length - 1);
+                          }
+                          showSnackBar(context: context, isError: false, message: "Deleted");
+                        } else {
+                          Get.offAll(const HomeScreen());
+                        }
+                      });
+                    }
+                  }
+                  debugPrint("Length ================ ${pickedMediaStory[pageController.page!.toInt()].type}");
+                  },
+                icon: const Icon(Icons.delete_outline, color: Colors.white,)),
+          )
+        ],
       ),
       body: SafeArea(
         child: Stack(
@@ -99,7 +139,7 @@ class _FileViewState extends State<FileView> {
             PageView.builder(
               controller: pageController,
               itemCount: pickedMediaStory.length,
-              physics: const BouncingScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(),
               scrollDirection: Axis.horizontal,
               allowImplicitScrolling: true,
               onPageChanged: (index) {
@@ -120,12 +160,12 @@ class _FileViewState extends State<FileView> {
                     child: customStoryView(story: pickedMediaStory[index]),
                   ),
                 );
-              },
+                },
             ),
             Positioned(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: SmoothPageIndicator(
+                child: pickedMediaStory.isEmpty ? null : SmoothPageIndicator(
                   controller: pageController,
                   count: pickedMediaStory.length,
                   effect: const ExpandingDotsEffect(
@@ -166,7 +206,7 @@ class _FileViewState extends State<FileView> {
               child: IconButton(
                 onPressed: () {
                   _handleEdit(pickedMediaStory[pageController.page!.toInt()], pageController.page!.toInt());
-                },
+                  },
                 icon: const Center(
                   child: Text(
                     "Edit",
@@ -224,7 +264,7 @@ class _FileViewState extends State<FileView> {
                       isLoadingUpload = false;
                     });
                   }
-                },
+                  },
                 icon: Center(
                   child: isLoadingUpload ? const Center(child: CircularProgressIndicator()) : Text(
                     "Next",
@@ -243,9 +283,9 @@ class _FileViewState extends State<FileView> {
   }
 
   String formatter(Duration duration) => [
-        duration.inMinutes.remainder(60).toString().padLeft(2, '0'),
-        duration.inSeconds.remainder(60).toString().padLeft(2, '0')
-      ].join(":");
+    duration.inMinutes.remainder(60).toString().padLeft(2, '0'),
+    duration.inSeconds.remainder(60).toString().padLeft(2, '0')
+  ].join(":");
 
   void _handleEdit(StoryTypeModel storyItems, int index) {
     if (storyItems.story.contains('.jpg') || storyItems.story.contains('.png') || storyItems.story.contains('.jpeg')) {
@@ -256,7 +296,7 @@ class _FileViewState extends State<FileView> {
             pickedMediaStory[index] = StoryTypeModel(story: file, type: StoryType.image);
           });
           pageController.jumpToPage(index);
-        },
+          },
         isStory: true,
       ));
     } else if (storyItems.story.contains('.mp4') || storyItems.story.contains('.mov') || storyItems.story.contains('.avi') ||
@@ -269,7 +309,7 @@ class _FileViewState extends State<FileView> {
             _initializeVideoController(index);
           });
           pageController.jumpToPage(index);
-        },
+          },
         navigateForIsStory: true,
       ));
     } else {
@@ -284,26 +324,26 @@ class _FileViewState extends State<FileView> {
       case StoryType.image:
         return Image.file( mediaFile, fit: BoxFit.fill);
 
-      case StoryType.video:
-        if (_controller != null && _controller!.value.isInitialized) {
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              AspectRatio(aspectRatio: _controller!.value.aspectRatio,child: VideoPlayer(_controller!)),
-              Positioned(
-                child: IconButton(
-                  icon: Icon(_controller!.value.isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 50, ),
-                  onPressed: () { setState(() { if (_controller!.value.isPlaying) { _controller!.pause(); } else { _controller!.play(); } }); },
+        case StoryType.video:
+          if (_controller != null && _controller!.value.isInitialized) {
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                AspectRatio(aspectRatio: _controller!.value.aspectRatio,child: VideoPlayer(_controller!)),
+                Positioned(
+                  child: IconButton(
+                    icon: Icon(_controller!.value.isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 50, ),
+                    onPressed: () { setState(() { if (_controller!.value.isPlaying) { _controller!.pause(); } else { _controller!.play(); } }); },
+                  ),
                 ),
-              ),
-            ],
-          );
-        } else {
-          return const Center(child: CircularProgressIndicator());
-        }
+              ],
+            );
+          } else {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-      default:
-        return Text(story.story);
+          default:
+            return Text(story.story);
     }
   }
 
